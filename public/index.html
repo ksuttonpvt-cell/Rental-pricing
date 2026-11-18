@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rental Rates</title>
+<meta name="description" content="Daily and weekly rental prices, current specials, and a price estimator.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,600..900&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="topbar">
+  <div class="wrap">
+    <a class="brand" href="/" id="brand">Rentals</a>
+    <div class="right">
+      <span id="top-hours" class="muted"></span>
+      <a class="phone" id="top-phone" hidden></a>
+      <a class="btn primary small" href="#estimate">Get a price</a>
+    </div>
+  </div>
+</div>
+
+<header class="hero wrap">
+  <p class="eyebrow" id="tagline">Car, SUV &amp; truck rentals</p>
+  <h1 id="hero-title">Rental Rates</h1>
+  <p class="lede" id="hero-lede">See every price and special, then build your own estimate for any vehicle and any length of rental.</p>
+  <div class="partner-banner" id="partner-banner" hidden></div>
+</header>
+
+<main class="wrap">
+  <div id="sections"><div class="empty">Loading prices…</div></div>
+
+  <section class="panel" id="estimate" aria-labelledby="est-h">
+    <h2 id="est-h">Estimate your rental</h2>
+    <p class="intro">Add each vehicle and rental length you'd like to compare. Prices are before taxes and fees.</p>
+    <div class="quote">
+      <div>
+        <div class="opts" id="opts"></div>
+        <div class="actions" style="margin-bottom:16px"><button class="btn" type="button" id="add-opt">+ Compare another vehicle</button></div>
+        <label class="check" id="combined-wrap" hidden><input type="checkbox" id="q-combined"> I'm renting all of these (show a combined total)</label>
+      </div>
+      <div class="result" aria-live="polite">
+        <div class="total-box" id="total-box">
+          <div class="t-label" id="q-total-label">Estimated total</div>
+          <div class="total money" id="q-total">$0.00</div>
+          <p class="sub" id="q-sub"></p>
+        </div>
+        <ul class="summary money" id="q-summary" aria-label="Estimate summary"></ul>
+
+        <form id="req-form" class="panel" style="margin:0;padding:18px" novalidate>
+          <h3 style="font-size:20px;margin-bottom:4px">Request this quote</h3>
+          <p class="muted" style="margin:0 0 12px;font-size:14px">Send us these options and we'll get back to you to confirm.</p>
+          <div class="field"><label for="r-name">Your name</label><input id="r-name" name="name" required maxlength="80" autocomplete="name"></div>
+          <div class="two" style="margin-bottom:14px">
+            <div class="field"><label for="r-phone">Phone</label><input id="r-phone" name="phone" type="tel" maxlength="40" autocomplete="tel"></div>
+            <div class="field"><label for="r-email">Email</label><input id="r-email" name="email" type="email" maxlength="120" autocomplete="email"></div>
+          </div>
+          <div class="field"><label for="r-msg">Anything else? <span class="hint">(optional)</span></label><textarea id="r-msg" name="message" rows="3" maxlength="1000"></textarea></div>
+          <input type="text" name="company" id="r-company" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
+          <div class="actions">
+            <button class="btn primary" type="submit" id="r-send">Send request</button>
+            <span id="r-msg-out" role="status"></span>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="info-h" style="margin-bottom:32px">
+    <div class="section-head"><h2 id="info-h">Good to know</h2></div>
+    <div class="info-grid">
+      <div class="info-card">
+        <h3>How pricing works</h3>
+        <p id="how"></p>
+        <p id="terms" class="muted"></p>
+      </div>
+      <div class="info-card" id="fuel-card">
+        <h3>Fuel</h3>
+        <div class="fuel-price money" id="fuel-price"></div>
+        <p class="muted">per gallon if the vehicle comes back without a full tank. Return it full and there's no fuel charge.</p>
+      </div>
+      <div class="info-card" id="visit-card">
+        <h3>Visit or call</h3>
+        <p id="v-address"></p>
+        <p id="v-hours" class="muted"></p>
+        <p><a id="v-phone" hidden></a></p>
+        <p><a id="v-email" hidden></a></p>
+        <p><a id="v-map" target="_blank" rel="noopener" hidden>Get directions</a></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span id="foot-name"></span>
+    <a href="/staff">Staff login</a>
+  </div>
+</footer>
+
+<script src="/shared.js"></script>
+<script src="/quote-builder.js"></script>
+<script src="/visitor.js"></script>
+</body>
+</html>

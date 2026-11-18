@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Staff – Rental Rates</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,600..900&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="topbar">
+  <div class="wrap">
+    <span class="brand" id="brand">Staff</span>
+    <div class="right">
+      <a href="/" target="_blank" rel="noopener">View visitor site</a>
+      <span id="who" class="muted"></span>
+      <button class="btn small" id="logout" hidden>Log out</button>
+    </div>
+  </div>
+</div>
+
+<!-- Login -->
+<main class="wrap" id="login-view" hidden>
+  <form class="panel login" id="login-form">
+    <h2 style="font-size:28px;margin-bottom:4px">Staff login</h2>
+    <p class="intro">Log in to change prices, build quotes and see quote requests.</p>
+    <div class="field"><label for="l-user">Username</label><input id="l-user" autocomplete="username" required></div>
+    <div class="field"><label for="l-pass">Password</label><input id="l-pass" type="password" autocomplete="current-password" required></div>
+    <div class="actions"><button class="btn primary" type="submit">Log in</button><span id="l-out" role="status"></span></div>
+  </form>
+</main>
+
+<!-- App -->
+<main class="wrap" id="app-view" hidden style="padding-top:20px">
+  <div class="tabs" role="tablist">
+    <button role="tab" data-tab="quotes" aria-selected="true">Quotes</button>
+    <button role="tab" data-tab="requests" aria-selected="false">Requests <span class="badge" id="req-badge" hidden></span></button>
+    <button role="tab" data-tab="prices" aria-selected="false">Prices</button>
+    <button role="tab" data-tab="business" aria-selected="false">Business info</button>
+    <button role="tab" data-tab="links" aria-selected="false">Partner pages</button>
+    <button role="tab" data-tab="accounts" aria-selected="false">Accounts</button>
+    <button role="tab" data-tab="server" aria-selected="false" data-admin hidden>Server <span class="badge" id="srv-badge" hidden></span></button>
+  </div>
+
+  <!-- Quotes -->
+  <section data-panel="quotes" class="panel">
+    <h2>Build a quote</h2>
+    <p class="intro">Add one option for each vehicle and rental length the customer asked about. Each option gets its own breakdown in the email.</p>
+    <div class="quote">
+      <div>
+        <div class="field"><label for="q-name">Customer name <span class="hint">(optional)</span></label><input id="q-name" placeholder="e.g. Jordan"></div>
+        <div class="opts" id="opts"></div>
+        <div class="actions" style="margin-bottom:16px"><button class="btn" type="button" id="add-opt">+ Add another vehicle</button></div>
+        <label class="check" id="combined-wrap" hidden><input type="checkbox" id="q-combined"> They're renting all of these (show a combined total)</label>
+        <label class="check"><input type="checkbox" id="q-compare" checked> Include other rental lengths in the email</label>
+      </div>
+      <div class="result" aria-live="polite">
+        <div class="total-box" id="total-box">
+          <div class="t-label" id="q-total-label">Estimated total</div>
+          <div class="total money" id="q-total">$0.00</div>
+          <p class="sub" id="q-sub"></p>
+        </div>
+        <ul class="summary money" id="q-summary"></ul>
+        <div class="email-box">
+          <label for="q-email">Email text</label>
+          <textarea id="q-email" readonly></textarea>
+          <div class="actions">
+            <button class="btn primary" id="copy-btn" type="button">Copy email text</button>
+            <a class="btn ghost" id="mail-link" href="#">Open in email app</a>
+            <span id="copied" class="note-ok" hidden>Copied</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Requests -->
+  <section data-panel="requests" class="panel" hidden>
+    <h2>Quote requests</h2>
+    <p class="intro">Requests visitors sent from the website. Totals are worked out with the prices at the time they sent it.</p>
+    <div class="actions" style="margin-bottom:12px">
+      <label class="check" style="margin:0"><input type="checkbox" id="show-done"> Show finished requests</label>
+      <button class="btn small" id="reload-req" type="button">Refresh</button>
+    </div>
+    <div class="req-list" id="req-list"></div>
+  </section>
+
+  <!-- Prices -->
+  <section data-panel="prices" class="panel" hidden>
+    <h2>Prices</h2>
+    <p class="intro">Changes show on the visitor site as soon as you save. Leave the 7-day price blank to use the weekly discount from Business info.</p>
+    <div class="editor" id="price-editor"></div>
+  </section>
+
+  <!-- Business -->
+  <section data-panel="business" class="panel" hidden>
+    <h2>Business info</h2>
+    <p class="intro">Shown on the visitor site and at the bottom of quote emails.</p>
+    <form id="biz-form" class="editor">
+      <div class="ed-settings">
+        <div class="field"><label for="b-businessName">Business name</label><input id="b-businessName" data-s="businessName" maxlength="100"></div>
+        <div class="field"><label for="b-tagline">Tagline</label><input id="b-tagline" data-s="tagline" maxlength="120" placeholder="Car, SUV & truck rentals"></div>
+        <div class="field"><label for="b-phone">Phone</label><input id="b-phone" data-s="phone" maxlength="40"></div>
+        <div class="field"><label for="b-email">Email</label><input id="b-email" data-s="email" type="email" maxlength="120"></div>
+        <div class="field"><label for="b-address">Address</label><textarea id="b-address" data-s="address" rows="2" maxlength="300"></textarea></div>
+        <div class="field"><label for="b-hours">Hours <span class="hint">(first line shows in the top bar)</span></label><textarea id="b-hours" data-s="hours" rows="3" maxlength="400"></textarea></div>
+        <div class="field"><label for="b-mapUrl">Map link <span class="hint">(optional, made from the address if blank)</span></label><input id="b-mapUrl" data-s="mapUrl" maxlength="500"></div>
+        <div class="field"><label for="b-fuel">Fuel charge per gallon ($)</label><input id="b-fuel" data-s="fuelPerGallon" type="number" min="0" step="0.01"></div>
+        <div class="field"><label for="b-disc">Weekly discount (%)</label><input id="b-disc" data-s="weeklyDiscount" type="number" min="0" max="100" step="1"></div>
+        <div class="field"><label for="b-terms">Fine print</label><textarea id="b-terms" data-s="terms" rows="2" maxlength="600"></textarea></div>
+        <div class="field"><label for="b-contact">Sign-off for emails</label><textarea id="b-contact" data-s="contact" rows="2" maxlength="300" placeholder="e.g. Call us to book. Thanks!"></textarea></div>
+      </div>
+      <div class="actions"><button class="btn primary" type="submit">Save business info</button><span id="biz-out" role="status"></span></div>
+    </form>
+  </section>
+
+  <!-- Partner pages -->
+  <section data-panel="links" class="panel" hidden>
+    <h2>Partner pages</h2>
+    <p class="intro">Each partner gets its own page with its own special prices. Put the link or QR code on brochures and signs. Quote requests show which page they came from.</p>
+    <div class="partner-list" id="partners"></div>
+    <div class="actions" style="margin-top:14px"><button class="btn" type="button" id="add-partner">+ Add partner page</button></div>
+  </section>
+
+  <!-- Accounts -->
+  <section data-panel="accounts" class="panel" hidden>
+    <div data-admin hidden>
+    <h2>Staff accounts</h2>
+    <p class="intro">Everyone listed here can log in and change prices.</p>
+    <div class="table-wrap"><table class="plain" id="users-table"></table></div>
+    <form id="add-user" class="two" style="margin-top:18px;align-items:end">
+      <div class="field"><label for="u-name">New username</label><input id="u-name" required maxlength="40" autocomplete="off"></div>
+      <div class="field"><label for="u-pass">Password <span class="hint">(10+ characters)</span></label><input id="u-pass" type="password" required minlength="10" autocomplete="new-password"></div>
+      <label class="check"><input type="checkbox" id="u-admin"> Admin (can use the Server tab and manage staff accounts)</label>
+      <div class="actions"><button class="btn" type="submit">Add staff account</button><span id="u-out" role="status"></span></div>
+    </form>
+    </div>
+    <h3 style="margin-top:28px;font-size:20px">Change your password</h3>
+    <form id="pw-form" class="two" style="margin-top:10px;align-items:end">
+      <div class="field"><label for="pw-old">Current password</label><input id="pw-old" type="password" required autocomplete="current-password"></div>
+      <div class="field"><label for="pw-new">New password</label><input id="pw-new" type="password" required minlength="10" autocomplete="new-password"></div>
+      <div class="actions"><button class="btn" type="submit">Change password</button><span id="pw-out" role="status"></span></div>
+    </form>
+  </section>
+
+  <!-- Server -->
+  <section data-panel="server" hidden>
+    <div class="panel">
+      <h2>Website switches</h2>
+      <p class="intro">Turn the visitor side or quote requests off for a while without stopping the server. Staff pages keep working.</p>
+      <div class="switches">
+        <label class="switch"><input type="checkbox" id="sw-site"><span class="track" aria-hidden="true"></span><span><b>Visitor site</b><span class="muted" id="sw-site-note"></span></span></label>
+        <label class="switch"><input type="checkbox" id="sw-req"><span class="track" aria-hidden="true"></span><span><b>Quote requests</b><span class="muted" id="sw-req-note"></span></span></label>
+      </div>
+      <div class="field" style="margin-top:14px"><label for="sw-msg">Message visitors see while the visitor site is off</label><textarea id="sw-msg" rows="2" maxlength="300" placeholder="Our rental prices page is being updated. Please call us for a quote."></textarea></div>
+      <div class="actions"><button class="btn primary" type="button" id="sw-save">Save switches</button><span id="sw-out" role="status"></span></div>
+    </div>
+
+    <div class="panel">
+      <div class="section-head" style="margin:0"><h2>Server status</h2><span class="muted" id="srv-when"></span></div>
+      <div class="srv-facts" id="srv-facts"></div>
+      <h3 class="srv-h">Traffic, last hour</h3>
+      <div class="bars" id="srv-bars" aria-label="Requests per minute for the last hour"></div>
+      <div class="actions" style="margin-top:16px">
+        <button class="btn danger" type="button" id="srv-restart">Restart the site</button>
+        <span id="srv-out" role="status"></span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Updates</h2>
+      <p class="intro" id="upd-state"></p>
+      <div class="actions" style="margin-bottom:12px"><button class="btn" type="button" id="upd-check">Check for updates now</button><span id="upd-out" role="status"></span></div>
+      <ul class="hist" id="upd-hist"></ul>
+    </div>
+
+    <div class="panel">
+      <h2>Backups</h2>
+      <p class="intro">A copy of the prices, quote requests and staff logins is made every night at 12:30 AM and kept 14 days. Restoring saves the current data first.</p>
+      <div class="actions" style="margin-bottom:12px"><button class="btn" type="button" id="bk-make">Back up now</button><span id="bk-out" role="status"></span></div>
+      <div class="table-wrap"><table class="plain" id="bk-table"></table></div>
+    </div>
+
+    <div class="panel">
+      <div class="section-head" style="margin-bottom:8px"><h2>Server log</h2>
+        <div class="actions"><div class="seg" role="group" aria-label="Which lines to show" id="log-levels"><button type="button" data-level="" aria-pressed="true">All</button><button type="button" data-level="warn" aria-pressed="false">Warnings &amp; errors</button><button type="button" data-level="error" aria-pressed="false">Errors</button></div>
+        <input type="search" id="log-q" placeholder="Search the log" aria-label="Search the log" style="width:200px"></div></div>
+      <div class="logbox" id="log-box" role="log"></div>
+    </div>
+  </section>
+</main>
+
+<script src="/vendor/qrcode.js"></script>
+<script src="/shared.js"></script>
+<script src="/quote-builder.js"></script>
+<script src="/staff.js"></script>
+</body>
+</html>

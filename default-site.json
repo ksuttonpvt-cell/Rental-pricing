@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "updatedAt": "2026-11-18T00:00:00.000Z",
+  "settings": {
+    "businessName": "",
+    "tagline": "Car, SUV & truck rentals",
+    "phone": "",
+    "email": "",
+    "address": "",
+    "hours": "",
+    "mapUrl": "",
+    "weeklyDiscount": 30,
+    "fuelPerGallon": 10,
+    "terms": "Taxes and applicable fees are extra. The final quote depends on the vehicle and rental dates.",
+    "contact": ""
+  },
+  "sections": [
+    {
+      "id": "specials",
+      "title": "Current specials",
+      "kind": "special",
+      "note": "",
+      "items": [
+        {
+          "id": "express",
+          "name": "Express service customers",
+          "detail": "Any vehicle while your car is in Express service",
+          "daily": 19.99,
+          "weekly": "",
+          "noWeekly": false,
+          "tag": "Express service"
+        },
+        {
+          "id": "mainline",
+          "name": "Main line service customers",
+          "detail": "Any vehicle while your car is in Main line service",
+          "daily": 29.99,
+          "weekly": "",
+          "noWeekly": false,
+          "tag": "Main line service"
+        },
+        {
+          "id": "chr-bz4x",
+          "name": "C-HR and bZ4X",
+          "detail": "Compact crossovers at a reduced daily rate",
+          "daily": 29.99,
+          "weekly": "",
+          "noWeekly": true,
+          "tag": "Vehicle special"
+        }
+      ]
+    },
+    {
+      "id": "regular",
+      "title": "Regular pricing",
+      "kind": "regular",
+      "note": "Weekly rates are 30% off seven daily charges.",
+      "items": [
+        {
+          "id": "compact",
+          "name": "Compacts & Sedans",
+          "detail": "Corolla, Prius, Camry",
+          "daily": 54.99,
+          "weekly": 269.45,
+          "noWeekly": false,
+          "tag": ""
+        },
+        {
+          "id": "csuv",
+          "name": "Compact SUVs & Crossovers",
+          "detail": "RAV4, C-HR, bZ4X",
+          "daily": 64.99,
+          "weekly": 318.45,
+          "noWeekly": false,
+          "tag": ""
+        },
+        {
+          "id": "adventure",
+          "name": "Adventure Vehicles",
+          "detail": "Tacoma, 4Runner",
+          "daily": 69.99,
+          "weekly": 342.95,
+          "noWeekly": false,
+          "tag": ""
+        },
+        {
+          "id": "family",
+          "name": "Family Vehicles",
+          "detail": "Highlander, Sienna",
+          "daily": 79.99,
+          "weekly": 391.95,
+          "noWeekly": false,
+          "tag": ""
+        },
+        {
+          "id": "truck",
+          "name": "Full-Size Trucks",
+          "detail": "Tundra",
+          "daily": 94.99,
+          "weekly": 465.45,
+          "noWeekly": false,
+          "tag": ""
+        }
+      ]
+    }
+  ],
+  "partners": [
+    {
+      "label": "Body shop",
+      "slug": "body-shop",
+      "message": "Welcome, body shop customers. Here are our current rental rates.",
+      "headline": "Body shop customer rental rates",
+      "showMainSpecials": true,
+      "showRegular": true,
+      "sections": []
+    },
+    {
+      "label": "Repair shop",
+      "slug": "repair-shop",
+      "message": "Welcome, repair shop customers. Here are our current rental rates.",
+      "headline": "Repair shop customer rental rates",
+      "showMainSpecials": true,
+      "showRegular": true,
+      "sections": []
+    },
+    {
+      "label": "Hotel guests",
+      "slug": "hotels",
+      "message": "Welcome, hotel guests. Here are our current rental rates.",
+      "headline": "Hotel guest rental rates",
+      "showMainSpecials": true,
+      "showRegular": true,
+      "sections": []
+    },
+    {
+      "label": "Travel agents",
+      "slug": "travel-agents",
+      "message": "Welcome, travel agents. Here are our current rental rates.",
+      "headline": "Travel agent rental rates",
+      "showMainSpecials": true,
+      "showRegular": true,
+      "sections": []
+    }
+  ]
+}

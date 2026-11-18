@@ -1,0 +1,10 @@
+services:
+  rental-site:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"   # only reachable from this machine; Cloudflare Tunnel connects here
+    environment:
+      - TRUST_PROXY=1
+    volumes:
+      - ./data:/app/data
