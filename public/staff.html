@@ -104,12 +104,18 @@
         <div class="field"><label for="b-businessName">Business name</label><input id="b-businessName" data-s="businessName" maxlength="100"></div>
         <div class="field"><label for="b-tagline">Tagline</label><input id="b-tagline" data-s="tagline" maxlength="120" placeholder="Car, SUV & truck rentals"></div>
         <div class="field"><label for="b-phone">Phone</label><input id="b-phone" data-s="phone" maxlength="40"></div>
+        <div class="field"><label for="b-directPhone">Direct line <span class="hint">(optional)</span></label><input id="b-directPhone" data-s="directPhone" maxlength="40"></div>
+        <div class="field"><label for="b-roadsidePhone">24-hour roadside assistance</label><input id="b-roadsidePhone" data-s="roadsidePhone" maxlength="40"></div>
         <div class="field"><label for="b-email">Email</label><input id="b-email" data-s="email" type="email" maxlength="120"></div>
         <div class="field"><label for="b-address">Address</label><textarea id="b-address" data-s="address" rows="2" maxlength="300"></textarea></div>
         <div class="field"><label for="b-hours">Hours <span class="hint">(one line each, or split with |)</span></label><textarea id="b-hours" data-s="hours" rows="3" maxlength="400"></textarea></div>
         <div class="field"><label for="b-mapUrl">Map link <span class="hint">(optional, made from the address if blank)</span></label><input id="b-mapUrl" data-s="mapUrl" maxlength="500"></div>
         <div class="field"><label for="b-fuel">Fuel charge per gallon ($)</label><input id="b-fuel" data-s="fuelPerGallon" type="number" min="0" step="0.01"></div>
         <div class="field"><label for="b-disc">Weekly discount (%)</label><input id="b-disc" data-s="weeklyDiscount" type="number" min="0" max="100" step="1"></div>
+        <div class="field"><label for="b-dailyRentalFee">Colorado daily rental fee ($ per day)</label><input id="b-dailyRentalFee" data-s="dailyRentalFee" type="number" min="0" step="0.01"></div>
+        <div class="field"><label for="b-taxRate">Tax on the rental (%)</label><input id="b-taxRate" data-s="taxRate" type="number" min="0" step="0.001"></div>
+        <div class="field"><label for="b-servicesFeeRate">Connected services fee (%) <span class="hint">(on rental + daily fee + tax)</span></label><input id="b-servicesFeeRate" data-s="servicesFeeRate" type="number" min="0" step="0.01"></div>
+        <div class="field" style="grid-column:1/-1"><label for="b-rentalTerms">Before you rent <span class="hint">(one rule per line; shown on the visitor pages and in quote emails)</span></label><textarea id="b-rentalTerms" data-s="rentalTerms" rows="8" maxlength="3000"></textarea></div>
         <div class="field"><label for="b-terms">Fine print</label><textarea id="b-terms" data-s="terms" rows="2" maxlength="600"></textarea></div>
         <div class="field"><label for="b-contact">Sign-off for emails</label><textarea id="b-contact" data-s="contact" rows="2" maxlength="300" placeholder="e.g. Call us to book. Thanks!"></textarea></div>
       </div>

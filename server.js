@@ -79,6 +79,19 @@ let site = readJson(FILES.site, null);
     console.log("Prices had never been saved, so the newest starting prices were loaded.");
   }
 }
+// One time: 303-996-1680 is the rental direct line; the dealership's main number is (720) 907-0926.
+if (site && site.settings && site.settings.directPhone === undefined && String(site.settings.phone || "").replace(/\D/g, "") === "3039961680") {
+  site.settings.directPhone = "(303) 996-1680";
+  site.settings.phone = "(720) 907-0926";
+  fs.writeFileSync(FILES.site, JSON.stringify(site, null, 2));
+  console.log("Phone numbers updated: main (720) 907-0926, direct line (303) 996-1680.");
+}
+// One time: the old starting fine print said taxes were extra; estimates now include them.
+if (site && site.settings && site.settings.terms === "Taxes and applicable fees are extra. The final quote depends on the vehicle and rental dates.") {
+  site.settings.terms = "Estimates include taxes and fees. The final amount depends on the vehicle, rental dates and any extra charges.";
+  fs.writeFileSync(FILES.site, JSON.stringify(site, null, 2));
+  console.log("Fine print updated: estimates now include taxes and fees.");
+}
 let users = readJson(FILES.users, []);
 let requests = readJson(FILES.requests, []);
 
@@ -208,6 +221,7 @@ function readBody(req, limit = 200_000) {
 }
 const str = (v, max) => String(v ?? "").trim().slice(0, max);
 const num = (v, min, max) => { const n = Number(v); return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n * 100) / 100)) : 0; };
+const rate = v => { const n = Number(v); return Number.isFinite(n) ? Math.min(50, Math.max(0, Math.round(n * 10000) / 10000)) : 0; };
 const id = v => String(v ?? "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40) || crypto.randomBytes(5).toString("hex");
 
 /* Keep only known fields so the stored file stays clean. */
@@ -219,6 +233,9 @@ function cleanSite(input, version) {
     mapUrl: /^https:\/\//.test(str(s.mapUrl, 500)) ? str(s.mapUrl, 500) : "",
     weeklyDiscount: num(s.weeklyDiscount, 0, 100), fuelPerGallon: num(s.fuelPerGallon, 0, 1000),
     terms: str(s.terms, 600), contact: str(s.contact, 300),
+    directPhone: str(s.directPhone, 40), roadsidePhone: str(s.roadsidePhone, 40),
+    dailyRentalFee: num(s.dailyRentalFee, 0, 1000), taxRate: rate(s.taxRate), servicesFeeRate: rate(s.servicesFeeRate),
+    rentalTerms: str(s.rentalTerms, 3000),
     visitorSiteOn: s.visitorSiteOn !== false, requestsOn: s.requestsOn !== false,
     offlineMessage: str(s.offlineMessage, 300),
   };

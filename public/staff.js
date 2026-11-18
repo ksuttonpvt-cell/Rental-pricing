@@ -84,9 +84,11 @@
       $("total-box").hidden = false;
       $("q-total-label").textContent = combined ? "Combined total" : "Estimated total";
       $("q-total").textContent = R.fmt(combined ? sum : rows[0].p.total);
-      $("q-sub").textContent = combined ? `${rows.length} rentals · before taxes and fees` : `${R.lenName(rows[0].days)} · ${R.optionLabel(rows[0])} · before taxes and fees`;
+      const note = R.totalNote(R.settingsOf(site));
+      $("q-sub").textContent = combined ? `${rows.length} rentals · ${note}` : `${R.lenName(rows[0].days)} · ${R.optionLabel(rows[0])} · ${note}`;
     } else $("total-box").hidden = true;
-    $("q-summary").innerHTML = rows.map(r => `<li><span><b>Option ${r.n}:</b> ${R.esc(R.optionLabel(r))}, ${R.esc(R.lenName(r.days))}</span><span class="amt">${R.fmt(r.p.total)}</span></li>`).join("")
+    $("q-summary").innerHTML = rows.map(r => `<li><span><b>Option ${r.n}:</b> ${R.esc(R.optionLabel(r))}, ${R.esc(R.lenName(r.days))}</span><span class="amt">${R.fmt(r.p.total)}</span></li>`
+        + (rows.length === 1 && r.p.feeLines.length ? [["Rental", r.p.rental], ...r.p.feeLines].map(([l, a]) => `<li class="fee"><span>${R.esc(l)}</span><span>${R.fmt(a)}</span></li>`).join("") : "")).join("")
       + (combined ? `<li class="combined"><span>Combined total</span><span class="amt">${R.fmt(sum)}</span></li>` : "");
     const text = R.buildEmail(site, rows, { name: $("q-name").value.trim(), combined, compare: $("q-compare").checked });
     $("q-email").value = text;

@@ -1,6 +1,6 @@
 /* Multi-vehicle quote builder used on both the visitor page and the staff page. */
 (function () {
-  const { esc, fmt, round2, rates, priceFor, findItem, allItems, isoDate, daysBetween, cleanDays, lenName, optionLabel, settingsOf } = window.Rates;
+  const { esc, fmt, round2, rates, priceFor, findItem, allItems, isoDate, daysBetween, cleanDays, lenName, optionLabel, settingsOf, MAX_DAYS, parseDate } = window.Rates;
   const QUICK = [[1, "1 day"], [2, "2 days"], [3, "3 days"], [7, "1 week"], [14, "2 weeks"], [21, "3 weeks"]];
   const uid = () => Math.random().toString(36).slice(2, 9);
   const today = (() => { const t = new Date(); return new Date(Date.UTC(t.getFullYear(), t.getMonth(), t.getDate())); })();
@@ -49,7 +49,7 @@
           ${o.mode === "days" ? `<div>
             <div class="stepper">
               <button type="button" data-step="-1" aria-label="One less day">−</button>
-              <input id="o-days-${o.id}" type="number" min="1" max="365" value="${o.days}" inputmode="numeric" data-k="days" aria-label="Number of days for option ${i + 1}">
+              <input id="o-days-${o.id}" type="number" min="1" max="${MAX_DAYS}" value="${o.days}" inputmode="numeric" data-k="days" aria-label="Number of days for option ${i + 1}">
               <button type="button" data-step="1" aria-label="One more day">+</button>
             </div>
             <div class="quick">${QUICK.map(([n, l]) => `<button type="button" data-days="${n}" aria-pressed="${Number(o.days) === n}">${l}</button>`).join("")}</div>
@@ -67,7 +67,10 @@
       container.querySelectorAll("[data-opt]").forEach(card => {
         const r = rs.find(x => x.id === card.dataset.opt);
         card.querySelector("[data-total]").textContent = r ? fmt(r.p.total) : "";
-        card.querySelector("[data-break]").textContent = r ? `${lenName(r.days)}: ${r.p.lines.map(([l, a]) => `${l} = ${fmt(a)}`).join(" + ")}` : "";
+        const o = opts.find(x => x.id === card.dataset.opt);
+        const asked = o.mode === "dates" ? Math.round((parseDate(o.end) - parseDate(o.start)) / 86400000) : Math.round(Number(o.days));
+        const tooLong = asked > MAX_DAYS ? ` Rentals must be shorter than 30 days, so this is priced for ${MAX_DAYS}.` : "";
+        card.querySelector("[data-break]").textContent = r ? `${lenName(r.days)}: ${[...r.p.lines, ...r.p.feeLines].map(([l, a]) => `${l} ${fmt(a)}`).join(" + ")}.${tooLong}` : "";
       });
       onChange && onChange(rs, opts.length);
     }
@@ -87,7 +90,7 @@
       if (b.dataset.remove !== undefined) { opts = opts.filter(x => x !== o); render(); return; }
       if (b.dataset.mode) { o.mode = b.dataset.mode; o.touched = true; render(); return; }
       if (b.dataset.days) o.days = Number(b.dataset.days);
-      else if (b.dataset.step) o.days = Math.min(365, Math.max(1, optDays(o) + Number(b.dataset.step)));
+      else if (b.dataset.step) o.days = Math.min(MAX_DAYS, Math.max(1, optDays(o) + Number(b.dataset.step)));
       else return;
       o.touched = true;
       const inp = card.querySelector('[data-k="days"]'); if (inp) inp.value = o.days;

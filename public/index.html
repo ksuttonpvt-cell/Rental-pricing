@@ -35,7 +35,7 @@
 
   <section class="panel" id="estimate" aria-labelledby="est-h">
     <h2 id="est-h">Estimate your rental</h2>
-    <p class="intro">Add each vehicle and rental length you'd like to compare. Prices are before taxes and fees.</p>
+    <p class="intro">Add each vehicle and rental length you'd like to compare. Estimates include taxes and fees.</p>
     <div class="quote">
       <div>
         <div class="opts" id="opts"></div>
@@ -72,6 +72,10 @@
   <section aria-labelledby="info-h" style="margin-bottom:32px">
     <div class="section-head"><h2 id="info-h">Good to know</h2></div>
     <div class="info-grid">
+      <div class="info-card wide" id="terms-card" hidden>
+        <h3>Before you rent</h3>
+        <ul class="terms" id="terms-list"></ul>
+      </div>
       <div class="info-card">
         <h3>How pricing works</h3>
         <p id="how"></p>
@@ -87,6 +91,8 @@
         <p id="v-address"></p>
         <p id="v-hours" class="muted"></p>
         <p><a id="v-phone" hidden></a></p>
+        <p id="v-direct-wrap" hidden>Direct line: <a id="v-direct"></a></p>
+        <p id="v-roadside" class="muted" hidden></p>
         <p><a id="v-email" hidden></a></p>
         <p><a id="v-map" target="_blank" rel="noopener" hidden>Get directions</a></p>
       </div>

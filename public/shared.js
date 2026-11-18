@@ -6,10 +6,28 @@
   const lenName = n => `${plural(n, "day")}${n % 7 === 0 ? ` (${plural(n / 7, "week")})` : ""}`;
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
+  const MAX_DAYS = 29; // rentals must be shorter than 30 consecutive days
+  const DEFAULT_TERMS = [
+    "Drivers must be 21 or older, with a valid driver's license and your own auto insurance.",
+    "Vehicles may only be driven in Colorado. They have GPS and connected services.",
+    "Rentals are shorter than 30 days. Return the vehicle by the due date and time.",
+    "Return it with the same amount of fuel, or we refill it at the fuel price per gallon.",
+    "No smoking or vaping: $250 smoke removal and detailing fee.",
+    "No pets (service animals welcome): $250 cleaning fee.",
+    "Return it reasonably clean. Extra interior cleaning is $250; interior and exterior is $350.",
+    "You pay any tickets or violations, plus a $30 fee for each one. Tolls have a 3% processing fee.",
+    "Service loaners: $25 per day if not returned within 24 hours after we tell you your car is ready.",
+    "You're responsible for the vehicle until we check it in. We're not responsible for items left inside."
+  ].join("\n");
+
   function settingsOf(site) {
     return Object.assign({
       businessName: "", tagline: "", phone: "", email: "", address: "", hours: "", mapUrl: "",
-      weeklyDiscount: 30, fuelPerGallon: 10, terms: "", contact: ""
+      weeklyDiscount: 30, fuelPerGallon: 10, terms: "", contact: "",
+      directPhone: "", roadsidePhone: "(800) 599-6766",
+      // Taxes and fees, worked out like page 1 of the rental agreement.
+      dailyRentalFee: 5.57, taxRate: 9.195, servicesFeeRate: 3.95,
+      rentalTerms: DEFAULT_TERMS
     }, (site && site.settings) || {});
   }
 
@@ -22,7 +40,7 @@
     return { daily, week, custom };
   }
 
-  function priceFor(item, days, settings) {
+  function rentalPrice(item, days, settings) {
     const r = rates(item, settings);
     if (r.week === null) return { total: round2(days * r.daily), lines: [[`${plural(days, "day")} × ${fmt(r.daily)}`, round2(days * r.daily)]] };
     const weeks = Math.floor(days / 7), extra = days % 7;
@@ -34,6 +52,26 @@
       else lines.push([`${plural(extra, "day")} × ${fmt(r.daily)}`, round2(dayCost)]);
     }
     return { total: round2(lines.reduce((s, l) => s + l[1], 0)), lines };
+  }
+  /* Taxes and fees, in the same order as the rental agreement:
+     daily rental fee per day, tax on the rental, then the connected services fee on all of that. */
+  function feesFor(rental, days, settings) {
+    const dailyFee = round2(days * (Number(settings.dailyRentalFee) || 0));
+    const tax = round2(rental * (Number(settings.taxRate) || 0) / 100);
+    const services = round2((rental + dailyFee + tax) * (Number(settings.servicesFeeRate) || 0) / 100);
+    const lines = [];
+    if (dailyFee) lines.push([`Colorado daily rental fee (${plural(days, "day")} × ${fmt(Number(settings.dailyRentalFee))})`, dailyFee]);
+    if (tax) lines.push([`Tax (${Number(settings.taxRate)}%)`, tax]);
+    if (services) lines.push([`Connected services fee (${Number(settings.servicesFeeRate)}%)`, services]);
+    return { lines, total: round2(dailyFee + tax + services) };
+  }
+  const hasFees = settings => !!(Number(settings.dailyRentalFee) || Number(settings.taxRate) || Number(settings.servicesFeeRate));
+  const totalNote = settings => hasFees(settings) ? "with taxes and fees" : "before taxes and fees";
+  // p.total is what the customer pays (with taxes and fees); p.rental is the rental before them.
+  function priceFor(item, days, settings) {
+    const r = rentalPrice(item, days, settings);
+    const f = feesFor(r.total, days, settings);
+    return { rental: r.total, lines: r.lines, feeLines: f.lines, fees: f.total, total: round2(r.total + f.total) };
   }
 
   function allItems(site) {
@@ -102,12 +140,14 @@
   function daysBetween(a, b) {
     if (!a || !b) return 1;
     const d = Math.round((parseDate(b) - parseDate(a)) / 86400000);
-    return Number.isFinite(d) ? Math.max(1, Math.min(365, d)) : 1;
+    return Number.isFinite(d) ? Math.max(1, Math.min(MAX_DAYS, d)) : 1;
   }
-  function cleanDays(n) { const d = Math.round(Number(n)); return Number.isFinite(d) && d >= 1 ? Math.min(d, 365) : 1; }
+  function cleanDays(n) { const d = Math.round(Number(n)); return Number.isFinite(d) && d >= 1 ? Math.min(d, MAX_DAYS) : 1; }
 
-  const COMPARE = [1, 3, 7, 14, 21, 30];
+  const COMPARE = [1, 3, 7, 14, 21, 28];
   // Hours can be typed on separate lines or on one line split with "|".
+  const termLines = st => String(st.rentalTerms || "").split("\n").map(x => x.trim()).filter(Boolean)
+    .map(t => t.replace(/the fuel price per gallon/i, fmt(Number(st.fuelPerGallon) || 0) + " per gallon"));
   const hoursLines = h => String(h || "").split(/\n|\|/).map(x => x.trim()).filter(Boolean);
   const optionLabel = r => `${r.model ? r.model + " · " : ""}${r.item.name}`;
 
@@ -146,22 +186,28 @@
       if (r.section.kind === "special") L.push(`  Pricing: ${r.section.title}`);
       L.push(`  Rental length: ${lenName(r.days)}${dateText}`);
       r.p.lines.forEach(([l, a]) => L.push(`  ${l}: ${fmt(a)}`));
-      L.push(`  Estimated total: ${fmt(r.p.total)} before taxes and fees`);
+      if (r.p.feeLines.length) {
+        L.push(`  Rental subtotal: ${fmt(r.p.rental)}`);
+        r.p.feeLines.forEach(([l, a]) => L.push(`  ${l}: ${fmt(a)}`));
+      }
+      L.push(`  Estimated total: ${fmt(r.p.total)} ${totalNote(st)}`);
       if (opt.compare) {
         const others = COMPARE.filter(n => n !== r.days);
         L.push(`  Other lengths: ${others.map(n => `${n % 7 === 0 ? plural(n / 7, "week") : plural(n, "day")} ${fmt(priceFor(r.item, n, st).total)}`).join(" · ")}`);
       }
     });
-    if (combined) L.push("", `COMBINED TOTAL FOR ALL ${rows.length} RENTALS: ${fmt(sum)} before taxes and fees`);
+    if (combined) L.push("", `COMBINED TOTAL FOR ALL ${rows.length} RENTALS: ${fmt(sum)} ${totalNote(st)}`);
     L.push("", "HOW PRICING WORKS");
     howItWorks(st, rows).forEach(l => L.push("  " + l));
+    const terms = termLines(st);
+    if (terms.length) { L.push("", "GOOD TO KNOW BEFORE YOU RENT"); terms.forEach(t => L.push("  - " + t)); }
     if (st.terms) L.push("", st.terms);
-    const contact = [st.contact, st.businessName, st.phone, st.address].filter(Boolean);
+    const contact = [st.contact, st.businessName, st.phone && `Main: ${st.phone}`, st.directPhone && `Direct: ${st.directPhone}`, st.address].filter(Boolean);
     if (contact.length) L.push("", ...contact);
     return L.join("\n");
   }
 
-  const api = { round2, fmt, plural, lenName, esc, settingsOf, rates, priceFor, allItems, findItem, partnerOf, sourceLabel, pageSections, allSections, pageView, staffView,parseDate, isoDate, niceDate, daysBetween, cleanDays, COMPARE, optionLabel, howItWorks, buildEmail, hoursLines };
+  const api = { round2, fmt, plural, lenName, esc, settingsOf, rates, priceFor, allItems, findItem, partnerOf, sourceLabel, pageSections, allSections, pageView, staffView,parseDate, isoDate, niceDate, daysBetween, cleanDays, COMPARE, optionLabel, howItWorks, buildEmail, hoursLines, termLines, totalNote, hasFees, feesFor, MAX_DAYS };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Rates = api;
 })(typeof window !== "undefined" ? window : globalThis);
