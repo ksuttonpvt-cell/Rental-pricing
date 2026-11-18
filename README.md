@@ -27,7 +27,7 @@ Close and reopen PowerShell afterwards.
 cd C:\
 ```
 ```
-git clone https://github.com/ksuttonpvt-cell/Rentals.git
+git clone https://github.com/ksuttonpvt-cell/Rental-pricing.git C:\Rentals
 ```
 This makes `C:\Rentals`. Then make your first staff login (it's an admin):
 ```
