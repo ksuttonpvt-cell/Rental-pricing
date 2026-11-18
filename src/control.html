@@ -133,6 +133,7 @@
       ['Restarts', s.restarts, s.last_exit ? `Last stop ${when(s.last_exit.at)} (${esc(s.last_exit.signal || 'code ' + s.last_exit.code)})` : 'None since Rentals Control started'],
       ['Problems in the last hour', `${s.log_counts.error} error${s.log_counts.error === 1 ? '' : 's'}`, `${s.log_counts.warn} warning${s.log_counts.warn === 1 ? '' : 's'}`],
       ['Rentals Control running for', ago(s.control_started), `Process ${s.pid || '—'}`],
+      ['Data folder (prices, logins, requests)', `<span style="font-size:.9rem;word-break:break-all">${esc(s.data_dir)}</span>`, s.data_info ? `Prices last saved: ${s.data_info.saved ? when(s.data_info.saved) : 'never (starting prices)'}` : ''],
     ].map(([k, b, n]) => `<div><span class="small muted">${k}</span><b>${b}</b><span class="small muted">${n}</span></div>`).join('');
     online(s);
     $('#files').innerHTML = s.log_files.length ? `Log files are in ${esc(s.logs_dir)} (kept 14 days): ${s.log_files.map((f) => esc(f.day)).join(' · ')}` : '';

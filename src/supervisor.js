@@ -97,6 +97,12 @@ function openFolder(dir) {
 }
 const json = (res, code, data) => { res.writeHead(code, { "Content-Type": "application/json", "Cache-Control": "no-store" }); res.end(JSON.stringify(data)); };
 const startedAt = new Date().toISOString();
+function dataInfo() {
+  try {
+    const d = JSON.parse(fs.readFileSync(path.join(dataDir, "site.json"), "utf8"));
+    return { saved: (d.version || 1) > 1 ? d.updatedAt : null };
+  } catch { return { saved: null }; }
+}
 
 const control = http.createServer(async (req, res) => {
   // Only this PC: the page must be opened as 127.0.0.1 or localhost, and actions need
@@ -114,7 +120,7 @@ const control = http.createServer(async (req, res) => {
       site_ok: state === "running" ? await ping(`http://127.0.0.1:${sitePort}/healthz`) : false,
       site_url: `http://localhost:${sitePort}`, public_url: publicUrl || null, online,
       control_started: startedAt, version, log_counts: logbook.counts(), logs_dir: logsDir, data_dir: dataDir,
-      log_files: logbook.files().slice(0, 7),
+      log_files: logbook.files().slice(0, 7), data_info: dataInfo(),
     });
   }
   if (req.method === "GET" && url.pathname === "/api/logs") {
