@@ -40,6 +40,7 @@ function readJson(file, fallback) {
 }
 let writing = Promise.resolve();
 function writeJson(file, value) {
+  if (file === FILES.users) setTimeout(() => { try { usersMtime = fs.statSync(FILES.users).mtimeMs; } catch {} }, 200);
   // queue writes and swap files atomically so a crash never leaves half a file
   writing = writing.then(async () => {
     const tmp = `${file}.${process.pid}.tmp`;
@@ -80,6 +81,16 @@ let site = readJson(FILES.site, null);
 }
 let users = readJson(FILES.users, []);
 let requests = readJson(FILES.requests, []);
+
+// Logins made with add-staff-login.bat while the site is running are picked up on the next sign-in.
+let usersMtime = 0;
+try { usersMtime = fs.statSync(FILES.users).mtimeMs; } catch {}
+function syncUsers() {
+  try {
+    const t = fs.statSync(FILES.users).mtimeMs;
+    if (t !== usersMtime) { usersMtime = t; users = readJson(FILES.users, users); console.log("Staff logins file changed on disk, reloaded it."); }
+  } catch { /* no file yet */ }
+}
 
 /* ---------- passwords ---------- */
 function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
@@ -275,6 +286,7 @@ async function handle(req, res) {
 
     if (p === "/api/login" && m === "POST") {
       if (limited("login:" + clientIp(req), 10, 15 * 60e3)) return json(res, 429, { error: "rate_limited" });
+      syncUsers();
       const body = await readBody(req, 2000);
       const u = users.find(x => x.username === String(body.username || "").trim().toLowerCase());
       const ok = u ? checkPassword(u, String(body.password || "")) : (checkPassword(DUMMY, "x"), false);
