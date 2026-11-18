@@ -30,7 +30,8 @@
     const view = R.pageView(site, slug);
     const partner = R.partnerOf(site, slug);
     const name = st.businessName || "Rentals";
-    const pageTitle = partner ? (partner.headline || `${partner.label} rental rates`) : "Rental Rates";
+    const content = R.pageContent(site, slug);
+    const pageTitle = content ? content.headline : "Rental Rates";
     document.title = st.businessName ? `${pageTitle} – ${st.businessName}` : pageTitle;
     $("hero-title").textContent = pageTitle;
     if (st.visitorSiteOn === false) {
@@ -47,10 +48,18 @@
       </section>`;
       return;
     }
-    if (partner) $("hero-lede").textContent = "Your special rental prices, plus an estimate tool for any vehicle and any length of rental.";
+    if (content) {
+      $("hero-lede").textContent = content.sub || "Rental prices, plus an estimate tool for any vehicle and any length of rental.";
+      const photo = R.photoUrl(content.photo);
+      if (photo) { $("hero-photo").src = photo; $("hero-photo").alt = `Rental vehicle for ${partner.label} customers`; $("hero-photo").hidden = false; $("hero").classList.add("hero-split"); }
+      const list = (title, items, cls, ordered) => items.length ? `<div class="pi-block ${cls}">${title ? `<h2>${R.esc(title)}</h2>` : ""}<${ordered ? "ol" : "ul"}>${items.map(x => `<li>${R.esc(x)}</li>`).join("")}</${ordered ? "ol" : "ul"}></div>` : "";
+      const html = list("", content.benefits, "pi-benefits") + list(content.stepsTitle || "How it works", content.steps, "pi-steps", true) + list(content.whyTitle || "Why choose us", content.why, "pi-why");
+      if (html) { $("partner-info").innerHTML = html; $("partner-info").hidden = false; }
+    }
     $("brand").textContent = name;
     $("foot-name").textContent = `© ${new Date().getFullYear()} ${name}`;
-    if (st.tagline) $("tagline").textContent = st.tagline;
+    if (content && content.badge) $("tagline").textContent = content.badge;
+    else if (st.tagline) $("tagline").textContent = st.tagline;
     $("top-hours").textContent = R.hoursLines(st.hours)[0] || "";
     if (st.phone) { $("top-phone").hidden = false; $("top-phone").textContent = st.phone; $("top-phone").href = telHref(st.phone); }
 
@@ -93,7 +102,8 @@
           }).join("")}
         </ul>`;
       }
-      el.innerHTML = `<div class="section-head"><h2>${R.esc(sec.title)}</h2>${sec.note ? `<p>${R.esc(sec.note)}</p>` : ""}</div>${body}`;
+      const heading = content && content.pricingTitle && sec === sections.find(x => (x.items || []).length) ? content.pricingTitle : sec.title;
+      el.innerHTML = `<div class="section-head"><h2>${R.esc(heading)}</h2>${sec.note ? `<p>${R.esc(sec.note)}</p>` : ""}</div>${body}`;
       mount.appendChild(el);
     });
     mount.querySelectorAll("[data-quote]").forEach(b => b.addEventListener("click", () => {

@@ -106,7 +106,7 @@
               "id": "bs-daily",
               "name": "Body shop customers",
               "detail": "Any vehicle while your car is in the body shop",
-              "daily": 24.99,
+              "daily": 34.99,
               "weekly": "",
               "noWeekly": false,
               "tag": "Body shop special"
@@ -133,7 +133,7 @@
               "id": "rs-daily",
               "name": "Repair shop customers",
               "detail": "Any vehicle while your car is being repaired",
-              "daily": 24.99,
+              "daily": 34.99,
               "weekly": "",
               "noWeekly": false,
               "tag": "Repair shop special"

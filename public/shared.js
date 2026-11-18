@@ -107,6 +107,63 @@
     }
     return null;
   }
+  /* What a partner page says, taken from the partner flyers. Staff can change all of it per category
+     (saved as category.content); locations use their category's. */
+  const SHOP_CONTENT = {
+    badge: "Partner rental program",
+    headline: "Keep Your Customers Moving",
+    sub: "Partner Rental Program for Body Shops & Repair Shops",
+    photo: "/img/shops.jpg",
+    benefits: ["Special partner pricing for repair and body shop referrals", "No mileage fee", "Free shuttle service within 15 miles", "Reliable late-model Toyota vehicles", "Easy customer referral process", "Pickup at Corwin Toyota Boulder service drive"],
+    stepsTitle: "How it works",
+    steps: ["Refer your customer", "Customer contacts Corwin Toyota Boulder", "We confirm availability and help get them moving"],
+    whyTitle: "", why: [], pricingTitle: "Partner pricing"
+  };
+  const PAGE_CONTENT = {
+    "body-shop": SHOP_CONTENT,
+    "repair-shop": SHOP_CONTENT,
+    "hotels": {
+      badge: "For hotels",
+      headline: "Give Your Guests More Freedom to Explore",
+      sub: "Rental options for hotel guests visiting Boulder and beyond.",
+      photo: "/img/hotels.jpg",
+      benefits: ["No mileage fee", "Free shuttle service within 15 miles", "Reliable late-model Toyota vehicles", "Great for visitors, families, and business travelers", "Pickup at Corwin Toyota Boulder service drive", "Easy guest referral process"],
+      stepsTitle: "Guest referral: how it works",
+      steps: ["Guest contacts Corwin Toyota Boulder", "We confirm availability and arrange pickup when applicable", "Guest is picked up by free shuttle within 15 miles or comes to the dealership", "Guest enjoys their Toyota rental"],
+      whyTitle: "", why: [], pricingTitle: "Leisure Rental Pricing"
+    },
+    "travel-agents": {
+      badge: "For travel agencies",
+      headline: "A Trusted Local Rental Option for Your Clients",
+      sub: "Help travelers explore Colorado in a late-model Toyota.",
+      photo: "/img/travel-agents.jpg",
+      benefits: ["No mileage fee", "Free shuttle service within 15 miles", "Reliable late-model Toyota vehicles", "Great for family vacations, business trips, and Colorado adventures", "Local Boulder dealership support", "Easy rental inquiry process"],
+      stepsTitle: "",
+      steps: [],
+      whyTitle: "Why refer Corwin Toyota Boulder?",
+      why: ["Local, trusted rental option", "Variety of Toyota vehicle choices", "Convenient for travelers visiting Boulder and nearby destinations", "Free shuttle within 15 miles"],
+      pricingTitle: "Leisure Rental Rates"
+    }
+  };
+  const BLANK_CONTENT = { badge: "", headline: "", sub: "", photo: "", benefits: [], stepsTitle: "", steps: [], whyTitle: "", why: [], pricingTitle: "" };
+  // The category's page content: what staff saved, or the flyer wording for the four starting categories.
+  function categoryContent(cat) {
+    const base = PAGE_CONTENT[cat.slug] || BLANK_CONTENT;
+    const c = Object.assign({}, BLANK_CONTENT, base, cat.content || {});
+    if (!c.headline) c.headline = cat.headline || (cat.label ? `${cat.label} rental rates` : "");
+    return c;
+  }
+  // Photo setting -> address: "" none, "/img/..." built-in, otherwise an uploaded file.
+  const photoUrl = v => !v ? "" : v.startsWith("/img/") ? v : `/logos/${v}`;
+  function pageContent(site, slug) {
+    const p = partnerOf(site, slug);
+    if (!p) return null;
+    const cat = p.kind === "location" ? p.category : p;
+    const c = Object.assign({}, categoryContent(cat));
+    if (p.kind === "location") c.headline = p.headline;
+    return c;
+  }
+
   // "ABC Collision (Body shop)" or "Body shop"
   function sourceLabel(site, slug) {
     const p = partnerOf(site, slug);
@@ -213,7 +270,7 @@
     return L.join("\n");
   }
 
-  const api = { round2, fmt, plural, lenName, esc, settingsOf, rates, priceFor, allItems, findItem, partnerOf, sourceLabel, pageSections, allSections, pageView, staffView,parseDate, isoDate, niceDate, daysBetween, cleanDays, COMPARE, optionLabel, howItWorks, buildEmail, hoursLines, termLines, totalNote, hasFees, feesFor, MAX_DAYS };
+  const api = { round2, fmt, plural, lenName, esc, settingsOf, rates, priceFor, allItems, findItem, partnerOf, sourceLabel, pageContent, categoryContent, photoUrl, PAGE_CONTENT, pageSections, allSections, pageView, staffView,parseDate, isoDate, niceDate, daysBetween, cleanDays, COMPARE, optionLabel, howItWorks, buildEmail, hoursLines, termLines, totalNote, hasFees, feesFor, MAX_DAYS };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Rates = api;
 })(typeof window !== "undefined" ? window : globalThis);

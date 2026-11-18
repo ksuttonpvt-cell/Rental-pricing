@@ -86,6 +86,15 @@ if (site && site.settings && site.settings.directPhone === undefined && String(s
   fs.writeFileSync(FILES.site, JSON.stringify(site, null, 2));
   console.log("Phone numbers updated: main (720) 907-0926, direct line (303) 996-1680.");
 }
+// One time: the body shop and repair shop partner rate went from $24.99 to $34.99 a day (matches the flyer).
+{
+  let changed = false;
+  for (const p of (site && site.partners) || []) {
+    if (!["body-shop", "repair-shop"].includes(p.slug)) continue;
+    for (const sec of p.sections || []) for (const it of sec.items || []) if (Number(it.daily) === 24.99) { it.daily = 34.99; changed = true; }
+  }
+  if (changed) { fs.writeFileSync(FILES.site, JSON.stringify(site, null, 2)); console.log("Body shop and repair shop rate updated to $34.99 a day."); }
+}
 // One time: the old starting fine print said taxes were extra; estimates now include them.
 if (site && site.settings && site.settings.terms === "Taxes and applicable fees are extra. The final quote depends on the vehicle and rental dates.") {
   site.settings.terms = "Estimates include taxes and fees. The final amount depends on the vehicle, rental dates and any extra charges.";
@@ -225,6 +234,17 @@ const rate = v => { const n = Number(v); return Number.isFinite(n) ? Math.min(50
 const id = v => String(v ?? "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40) || crypto.randomBytes(5).toString("hex");
 
 /* Keep only known fields so the stored file stays clean. */
+// Partner page wording and photo (see PAGE_CONTENT in public/shared.js).
+function cleanContent(c) {
+  const list = v => (Array.isArray(v) ? v : String(v || "").split("\n")).map(x => str(x, 200)).filter(Boolean).slice(0, 12);
+  const photo = String(c.photo || "");
+  return {
+    badge: str(c.badge, 60), headline: str(c.headline, 120), sub: str(c.sub, 200),
+    photo: /^\/img\/[a-z0-9-]+\.jpg$/.test(photo) || LOGO_NAME.test(photo) ? photo : "",
+    benefits: list(c.benefits), stepsTitle: str(c.stepsTitle, 80), steps: list(c.steps),
+    whyTitle: str(c.whyTitle, 80), why: list(c.why), pricingTitle: str(c.pricingTitle, 80),
+  };
+}
 function cleanSite(input, version) {
   // Start from the defaults, so a setting that isn't in the saved file yet (for example a link
   // added in an update) keeps its default instead of being saved blank.
@@ -267,6 +287,7 @@ function cleanSite(input, version) {
     headline: str(p.headline, 100), message: str(p.message, 300),
     alsoMainSpecials: !!p.alsoMainSpecials, alsoRegular: !!p.alsoRegular,
     sections: cleanSections(p.sections), _locations: Array.isArray(p.locations) ? p.locations : [],
+    content: p.content ? cleanContent(p.content) : undefined,
   })).filter(p => p.label && free(p.slug));
   const partners = cats.map(({ _locations, ...p }) => Object.assign(p, {
     locations: _locations.slice(0, 200).map(l => ({

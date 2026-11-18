@@ -360,8 +360,31 @@
       <div class="ed-settings">
         <div class="field"><label for="ce-label">Category name</label><input id="ce-label" value="${R.esc(c.label)}" maxlength="60" placeholder="e.g. Body shop"></div>
         <div class="field"><label for="ce-slug">Link ending <span class="hint">(letters, numbers, dashes)</span></label><input id="ce-slug" value="${R.esc(c.slug)}" maxlength="40" placeholder="body-shop"></div>
-        <div class="field"><label for="ce-headline">Page headline</label><input id="ce-headline" value="${R.esc(c.headline || "")}" maxlength="100" placeholder="${R.esc((c.label || "Partner") + " rental rates")}"></div>
         <div class="field"><label for="ce-message">Welcome message <span class="hint">(locations use it too unless they have their own)</span></label><textarea id="ce-message" rows="2" maxlength="300">${R.esc(c.message || "")}</textarea></div>
+      </div>
+      <h4 class="ed-h">Page wording and photo</h4>
+      <p class="muted ed-note">This is what visitors read at the top of the page. Locations in this category use it too, with their own name as the headline.</p>
+      <div class="ed-settings">
+        <div class="field"><label for="ce-badge">Small label above the headline</label><input id="ce-badge" value="${R.esc(c.content.badge)}" maxlength="60" placeholder="e.g. For hotels"></div>
+        <div class="field"><label for="ce-headline">Headline</label><input id="ce-headline" value="${R.esc(c.content.headline)}" maxlength="120"></div>
+        <div class="field" style="grid-column:1/-1"><label for="ce-sub">Line under the headline</label><input id="ce-sub" value="${R.esc(c.content.sub)}" maxlength="200"></div>
+      </div>
+      <div class="logo-row">
+        <div class="logo-box photo">${R.photoUrl(c.content.photo) ? `<img src="${R.esc(R.photoUrl(c.content.photo))}" alt="Page photo">` : `<span class="muted">No photo</span>`}</div>
+        <div class="field" style="margin:0">
+          <label for="ce-photo">Page photo <span class="hint">(PNG, JPG or WebP, up to 1.5 MB; wide photos look best)</span></label>
+          <input id="ce-photo" type="file" accept="image/png,image/jpeg,image/webp">
+          ${c.content.photo ? `<button class="btn small ghost danger" type="button" data-act="photo-remove" style="justify-self:start">Remove photo</button>` : ""}
+          <span id="ce-photo-msg" role="status"></span>
+        </div>
+      </div>
+      <div class="ed-settings">
+        <div class="field" style="grid-column:1/-1"><label for="ce-benefits">Benefits <span class="hint">(one per line, shown with check marks)</span></label><textarea id="ce-benefits" rows="6">${R.esc(c.content.benefits.join("\n"))}</textarea></div>
+        <div class="field"><label for="ce-stepsTitle">Steps title</label><input id="ce-stepsTitle" value="${R.esc(c.content.stepsTitle)}" maxlength="80" placeholder="How it works"></div>
+        <div class="field"><label for="ce-steps">Steps <span class="hint">(one per line, numbered)</span></label><textarea id="ce-steps" rows="4">${R.esc(c.content.steps.join("\n"))}</textarea></div>
+        <div class="field"><label for="ce-whyTitle">Extra list title <span class="hint">(optional)</span></label><input id="ce-whyTitle" value="${R.esc(c.content.whyTitle)}" maxlength="80" placeholder="Why refer us?"></div>
+        <div class="field"><label for="ce-why">Extra list <span class="hint">(one per line)</span></label><textarea id="ce-why" rows="4">${R.esc(c.content.why.join("\n"))}</textarea></div>
+        <div class="field"><label for="ce-pricingTitle">Pricing heading</label><input id="ce-pricingTitle" value="${R.esc(c.content.pricingTitle)}" maxlength="80" placeholder="e.g. Leisure Rental Pricing"></div>
       </div>
       <h4 class="ed-h">Category prices</h4>
       <p class="muted ed-note">Shown on the category page, and on every location in this category that doesn't have its own prices. If there are none, visitors see your regular pricing.</p>
@@ -474,6 +497,7 @@
   function startEdit(type, cat, loc, isNew, value) {
     editing = { type, cat, loc, isNew };
     draft = JSON.parse(JSON.stringify(value));
+    if (type === "cat") draft.content = R.categoryContent(draft);
     renderPartners();
     const first = $(type === "cat" ? "ce-label" : "le-name");
     if (first && isNew) first.focus();
@@ -486,8 +510,14 @@
     const v = id => { const el = $(id); return el ? el.value.trim() : undefined; };
     if (pageEditor) draft.sections = pageEditor.value();
     if (editing.type === "cat") {
+      const lines = id => v(id).split("\n").map(x => x.trim()).filter(Boolean);
       Object.assign(draft, { label: v("ce-label"), slug: slugify(v("ce-slug")), headline: v("ce-headline"), message: v("ce-message"),
         alsoMainSpecials: $("ce-main").checked, alsoRegular: $("ce-regular").checked });
+      draft.content = Object.assign({}, draft.content, {
+        badge: v("ce-badge"), headline: v("ce-headline"), sub: v("ce-sub"),
+        benefits: lines("ce-benefits"), stepsTitle: v("ce-stepsTitle"), steps: lines("ce-steps"),
+        whyTitle: v("ce-whyTitle"), why: lines("ce-why"), pricingTitle: v("ce-pricingTitle"),
+      });
     } else {
       Object.assign(draft, { name: v("le-name"), slug: slugify(v("le-slug")), headline: v("le-headline"), message: v("le-message") });
     }
@@ -528,6 +558,19 @@
       }
       renderPartners();
     }
+    if (e.target.id === "ce-photo") {
+      const f = e.target.files[0]; if (!f) return;
+      const msg = $("ce-photo-msg");
+      if (!/^image\/(png|jpeg|webp)$/.test(f.type)) return say(msg, "Pick a PNG, JPG or WebP image.");
+      if (f.size > 1_500_000) return say(msg, "That image is over 1.5 MB. Use a smaller one.");
+      msg.className = ""; msg.textContent = "Uploading…";
+      const dataUrl = await new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = bad; r.readAsDataURL(f); });
+      try {
+        const { file } = await api("/api/logos", { method: "POST", body: { dataUrl } });
+        readEditor(); draft.content.photo = file; renderPartners();
+        say($("ce-photo-msg"), "Photo added. Click Save category to keep it.", true);
+      } catch (err) { say(msg, err.message); }
+    }
     if (e.target.id === "le-logo") {
       const f = e.target.files[0]; if (!f) return;
       const msg = $("le-logo-msg");
@@ -559,6 +602,7 @@
     if (act === "edit-cat") return isOpen("cat", catSlug) ? stopEdit() : startEdit("cat", catSlug, null, false, cat);
     if (act === "edit-loc") return isOpen("loc", catSlug, locSlug) ? stopEdit() : startEdit("loc", catSlug, locSlug, false, cat.locations.find(l => l.slug === locSlug));
     if (act === "add-loc") return startEdit("loc", catSlug, "\u0000new", true, { name: "", slug: "", headline: "", message: "", logo: "", useOwnPrices: false, sections: [] });
+    if (act === "photo-remove") { readEditor(); draft.content.photo = ""; return renderPartners(); }
     if (act === "logo-remove") { readEditor(); draft.logo = ""; return renderPartners(); }
 
     const msg = $("pe-msg");
