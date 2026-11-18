@@ -278,10 +278,22 @@ function cleanSite(input, version) {
 const LOGO_NAME = /^[a-f0-9]{16}\.(png|jpg|webp)$/;
 const LOGO_DIR = path.join(DATA_DIR, "logos");
 const TYPES = { ".jpg": "image/jpeg", ".webp": "image/webp", ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".txt": "text/plain; charset=utf-8" };
+// Cloudflare keeps scripts and styles for hours. Each version of the site links them as
+// /file.js?v=<fingerprint of all of them>, so an update always loads the new files.
+const ASSET_VERSION = (() => {
+  const h = crypto.createHash("sha1");
+  const walk = dir => fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name)).forEach(e => {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) walk(full); else if (/\.(js|css)$/.test(e.name)) h.update(e.name).update(fs.readFileSync(full));
+  });
+  walk(PUBLIC_DIR);
+  return h.digest("hex").slice(0, 10);
+})();
 async function serveFile(res, file, status = 200) {
   try {
-    const body = await fsp.readFile(file);
+    let body = await fsp.readFile(file);
     const ext = path.extname(file);
+    if (ext === ".html") body = body.toString("utf8").replace(/(src|href)="(\/[^"?#:]+\.(?:js|css))"/g, `$1="$2?v=${ASSET_VERSION}"`);
     send(res, status, body, { "Content-Type": TYPES[ext] || "application/octet-stream", "Cache-Control": ext === ".html" ? "no-cache" : "public, max-age=300" });
   } catch { send(res, 404, "Not found", { "Content-Type": "text/plain" }); }
 }
