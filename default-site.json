@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-18T00:00:00.000Z",
+  "updatedAt": "2026-11-18T07:00:00.000Z",
   "settings": {
     "businessName": "",
     "tagline": "Car, SUV & truck rentals",
@@ -12,33 +12,18 @@
     "weeklyDiscount": 30,
     "fuelPerGallon": 10,
     "terms": "Taxes and applicable fees are extra. The final quote depends on the vehicle and rental dates.",
-    "contact": ""
+    "contact": "",
+    "visitorSiteOn": true,
+    "requestsOn": true,
+    "offlineMessage": ""
   },
   "sections": [
     {
       "id": "specials",
-      "title": "Current specials",
+      "title": "Rental Specials",
       "kind": "special",
       "note": "",
       "items": [
-        {
-          "id": "express",
-          "name": "Express service customers",
-          "detail": "Any vehicle while your car is in Express service",
-          "daily": 19.99,
-          "weekly": "",
-          "noWeekly": false,
-          "tag": "Express service"
-        },
-        {
-          "id": "mainline",
-          "name": "Main line service customers",
-          "detail": "Any vehicle while your car is in Main line service",
-          "daily": 29.99,
-          "weekly": "",
-          "noWeekly": false,
-          "tag": "Main line service"
-        },
         {
           "id": "chr-bz4x",
           "name": "C-HR and bZ4X",
@@ -46,7 +31,7 @@
           "daily": 29.99,
           "weekly": "",
           "noWeekly": true,
-          "tag": "Vehicle special"
+          "tag": "Rental Specials"
         }
       ]
     },
@@ -112,7 +97,25 @@
       "headline": "Body shop customer rental rates",
       "showMainSpecials": true,
       "showRegular": true,
-      "sections": []
+      "sections": [
+        {
+          "id": "bs-specials",
+          "title": "Body shop specials",
+          "kind": "special",
+          "note": "",
+          "items": [
+            {
+              "id": "bs-daily",
+              "name": "Body shop customers",
+              "detail": "Any vehicle while your car is in the body shop",
+              "daily": 24.99,
+              "weekly": "",
+              "noWeekly": false,
+              "tag": "Body shop special"
+            }
+          ]
+        }
+      ]
     },
     {
       "label": "Repair shop",
@@ -121,14 +124,32 @@
       "headline": "Repair shop customer rental rates",
       "showMainSpecials": true,
       "showRegular": true,
-      "sections": []
+      "sections": [
+        {
+          "id": "rs-specials",
+          "title": "Repair shop specials",
+          "kind": "special",
+          "note": "",
+          "items": [
+            {
+              "id": "rs-daily",
+              "name": "Repair shop customers",
+              "detail": "Any vehicle while your car is being repaired",
+              "daily": 24.99,
+              "weekly": "",
+              "noWeekly": false,
+              "tag": "Repair shop special"
+            }
+          ]
+        }
+      ]
     },
     {
       "label": "Hotel guests",
       "slug": "hotels",
       "message": "Welcome, hotel guests. Here are our current rental rates.",
       "headline": "Hotel guest rental rates",
-      "showMainSpecials": true,
+      "showMainSpecials": false,
       "showRegular": true,
       "sections": []
     },
@@ -137,7 +158,7 @@
       "slug": "travel-agents",
       "message": "Welcome, travel agents. Here are our current rental rates.",
       "headline": "Travel agent rental rates",
-      "showMainSpecials": true,
+      "showMainSpecials": false,
       "showRegular": true,
       "sections": []
     }

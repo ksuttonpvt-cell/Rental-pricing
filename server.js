@@ -68,6 +68,16 @@ const updater = createUpdater({ cwd: __dirname, enabled: SUPERVISED && process.e
 if (!SUPERVISED) updater.state.reason = updater.state.reason || "Started without start-rentals.bat, so it can't restart itself after an update.";
 
 let site = readJson(FILES.site, null);
+// If the prices have never been saved (still a starting copy), switch to the newest starting prices.
+// Anything a staff member saved is never replaced.
+{
+  const fresh = readJson(path.join(__dirname, "default-site.json"), null);
+  if (site && fresh && (site.version || 1) <= 1 && site.updatedAt !== fresh.updatedAt) {
+    site = fresh;
+    fs.writeFileSync(FILES.site, JSON.stringify(site, null, 2));
+    console.log("Prices had never been saved, so the newest starting prices were loaded.");
+  }
+}
 let users = readJson(FILES.users, []);
 let requests = readJson(FILES.requests, []);
 
