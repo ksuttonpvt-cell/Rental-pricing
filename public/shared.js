@@ -207,7 +207,7 @@
     if (terms.length) { L.push("", "GOOD TO KNOW BEFORE YOU RENT"); terms.forEach(t => L.push("  - " + t)); }
     if (st.terms) L.push("", st.terms);
     if (st.startUrl) L.push("", "READY TO RENT?", `  ${st.startLabel || "Start your rental"} ahead of time, so pick-up is quick:`, `  ${st.startUrl}`);
-    if (st.shuttleUrl) L.push("", `NEED A RIDE TO PICK UP YOUR RENTAL?`, `  Request a shuttle ride${Number(st.shuttleMiles) ? ` (within ${Number(st.shuttleMiles)} miles)` : ""}:`, `  ${st.shuttleUrl}`);
+    if (st.shuttleUrl && st.shuttleOn !== false) L.push("", `NEED A RIDE TO PICK UP YOUR RENTAL?`, `  Request a free shuttle ride${Number(st.shuttleMiles) ? ` (within ${Number(st.shuttleMiles)} miles)` : ""}:`, `  ${st.shuttleUrl}`);
     const contact = [st.contact, st.businessName, st.phone && `Main: ${st.phone}`, st.directPhone && `Direct: ${st.directPhone}`, st.address].filter(Boolean);
     if (contact.length) L.push("", ...contact);
     return L.join("\n");

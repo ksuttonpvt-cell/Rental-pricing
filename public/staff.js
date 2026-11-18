@@ -636,16 +636,18 @@
     const st = R.settingsOf(site);
     $("sw-site").checked = st.visitorSiteOn !== false;
     $("sw-req").checked = st.requestsOn !== false;
+    $("sw-shuttle").checked = st.shuttleOn !== false;
     $("sw-msg").value = st.offlineMessage || "";
     switchNotes();
   }
   function switchNotes() {
     $("sw-site-note").textContent = $("sw-site").checked ? "On: anyone can see prices and get estimates." : "Off: visitors see your message and phone number instead.";
+    $("sw-shuttle-note").textContent = $("sw-shuttle").checked ? "On: visitors and quote emails show the free shuttle ride link." : "Off: the shuttle ride link is hidden everywhere.";
     $("sw-req-note").textContent = $("sw-req").checked ? "On: visitors can send quote requests." : "Off: the request form is hidden; visitors are asked to call.";
   }
-  ["sw-site", "sw-req"].forEach(id => $(id).addEventListener("change", switchNotes));
+  ["sw-site", "sw-req", "sw-shuttle"].forEach(id => $(id).addEventListener("change", switchNotes));
   $("sw-save").addEventListener("click", async () => {
-    const settings = Object.assign({}, site.settings, { visitorSiteOn: $("sw-site").checked, requestsOn: $("sw-req").checked, offlineMessage: $("sw-msg").value.trim() });
+    const settings = Object.assign({}, site.settings, { visitorSiteOn: $("sw-site").checked, requestsOn: $("sw-req").checked, shuttleOn: $("sw-shuttle").checked, offlineMessage: $("sw-msg").value.trim() });
     try { await saveSite(Object.assign({}, site, { settings })); fillSwitches(); say($("sw-out"), "Saved. The visitor site is updated.", true); loadServer(); }
     catch (err) { say($("sw-out"), err.message); }
   });
@@ -659,7 +661,7 @@
     $("srv-badge").hidden = !errs; $("srv-badge").textContent = errs;
     const fact = (label, value, note, cls = "") => `<div class="${cls}">${R.esc(label)}<b>${value}</b>${note ? R.esc(note) : ""}</div>`;
     $("srv-facts").innerHTML = [
-      fact("Visitor site", s.switches.visitorSiteOn ? "On" : "Off", s.switches.requestsOn ? "Quote requests on" : "Quote requests off", s.switches.visitorSiteOn ? "good" : "bad"),
+      fact("Visitor site", s.switches.visitorSiteOn ? "On" : "Off", `Quote requests ${s.switches.requestsOn ? "on" : "off"} · Shuttle ${s.switches.shuttleOn ? "on" : "off"}`, s.switches.visitorSiteOn ? "good" : "bad"),
       fact("Running for", ago(s.startedAt), `Since ${when(s.startedAt)}`),
       fact("Version", R.esc(s.app ? "v" + s.app : "?") + (u.version ? ` <span class="muted" style="font-size:13px">${R.esc(u.version)}</span>` : ""), u.versionDate ? `Built ${when(u.versionDate)}` : ""),
       fact("Visits, last hour", s.lastHour.requests.toLocaleString(), `Average answer ${s.lastHour.avgMs} ms`),

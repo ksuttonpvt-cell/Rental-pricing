@@ -226,7 +226,9 @@ const id = v => String(v ?? "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40) || c
 
 /* Keep only known fields so the stored file stays clean. */
 function cleanSite(input, version) {
-  const s = input.settings || {};
+  // Start from the defaults, so a setting that isn't in the saved file yet (for example a link
+  // added in an update) keeps its default instead of being saved blank.
+  const s = Rates.settingsOf(input);
   const settings = {
     businessName: str(s.businessName, 100), tagline: str(s.tagline, 120), phone: str(s.phone, 40),
     email: str(s.email, 120), address: str(s.address, 300), hours: str(s.hours, 400),
@@ -238,7 +240,7 @@ function cleanSite(input, version) {
     shuttleUrl: /^https:\/\//.test(str(s.shuttleUrl, 500)) ? str(s.shuttleUrl, 500) : "", shuttleMiles: num(s.shuttleMiles, 0, 500),
     dailyRentalFee: num(s.dailyRentalFee, 0, 1000), taxRate: rate(s.taxRate), servicesFeeRate: rate(s.servicesFeeRate),
     rentalTerms: str(s.rentalTerms, 3000),
-    visitorSiteOn: s.visitorSiteOn !== false, requestsOn: s.requestsOn !== false,
+    visitorSiteOn: s.visitorSiteOn !== false, requestsOn: s.requestsOn !== false, shuttleOn: s.shuttleOn !== false,
     offlineMessage: str(s.offlineMessage, 300),
   };
   // every price id must be unique across the main page and all partner pages
@@ -469,7 +471,7 @@ async function handle(req, res) {
           updates: { ...updater.state }, logCounts: logbook.counts(),
           traffic: t, lastHour: { requests: lastHour.n, avgMs: lastHour.n ? Math.round(lastHour.ms / lastHour.n) : 0, errors: lastHour.errors },
           sessions: sessions.size, newRequests: requests.filter(r => r.status !== "done").length,
-          switches: { visitorSiteOn: site.settings.visitorSiteOn !== false, requestsOn: site.settings.requestsOn !== false },
+          switches: { visitorSiteOn: site.settings.visitorSiteOn !== false, requestsOn: site.settings.requestsOn !== false, shuttleOn: site.settings.shuttleOn !== false },
         });
       }
       if (what === "logs" && m === "GET") {
