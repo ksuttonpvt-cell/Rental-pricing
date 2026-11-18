@@ -3,7 +3,7 @@ services:
     build: .
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8080:8080"   # only reachable from this machine; Cloudflare Tunnel connects here
+      - "127.0.0.1:3002:3002"   # only reachable from this machine; Cloudflare Tunnel connects here
     environment:
       - TRUST_PROXY=1
     volumes:

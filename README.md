@@ -10,45 +10,74 @@ Everything is saved in the `data` folder (`site.json`, `requests.json`, `users.j
 
 ---
 
-## 1. Install Node.js (one time)
+## 1. Install the software (one time)
 
 Open **PowerShell** and run:
 ```
 winget install OpenJS.NodeJS.LTS
 ```
-Or download the **LTS** installer from nodejs.org. Close and reopen PowerShell afterwards.
+```
+winget install Git.Git
+```
+Close and reopen PowerShell afterwards.
 
-## 2. Try it
+## 2. Get the site from GitHub
 
-1. Unzip `rental-site` somewhere permanent, for example `C:\rental-site`.
-2. Double-click **add-staff-login.bat**, type a username, then a password (10+ characters; it won't show as you type).
-3. Double-click **start-site.bat**. Leave that window open.
-4. Open **http://localhost:8080** (visitor side) and **http://localhost:8080/staff** (staff side).
-5. Log in and fill in **Business info**: name, phone, address, hours.
+```
+cd C:\
+```
+```
+git clone https://github.com/ksuttonpvt-cell/Rentals.git
+```
+This makes `C:\Rentals`. Then make your first staff login (it's an admin):
+```
+cd C:\Rentals
+```
+```
+node server.js add-user owner
+```
 
-More staff logins can be added on the staff side under **Staff accounts**.
+**Moving from the old unzipped copy?** Stop the old one first (`Stop-ScheduledTask -TaskName "Rental Rates website"`),
+then copy its whole `data` folder into `C:\Rentals\data`. Your prices, partner pages, requests and logins come with it,
+so you can skip `add-user`.
 
-## 3. Start it automatically with Windows
+## 3. Start it, and start it with Windows
 
-Close the start-site window first. Then open **PowerShell as administrator** in the folder and run:
+Double-click **start-rentals.bat** to try it. The first time, it makes a `.env` settings file from `.env.example`
+(port 3002, control window on 3003, your public address). Open http://localhost:3002 and http://localhost:3002/staff.
+
+To start it automatically with Windows (replaces the old task), close that window and run in an **administrator** PowerShell:
+```
+cd C:\Rentals
+```
 ```
 powershell -ExecutionPolicy Bypass -File .\run-at-startup.ps1
 ```
-The site now runs in the background, even after a restart. Its log goes to `data\server.log`.
-To stop it starting automatically:
-```
-Unregister-ScheduledTask -TaskName "Rental Rates website" -Confirm:$false
-```
+Or put a shortcut to **start-rentals-hidden.vbs** in Task Scheduler / the Startup folder, the same way as the shuttle.
 
-## Updating to a new version
+## Rentals Control (on/off switch, this PC only)
 
-Your prices, requests and logins live in the `data` folder, so updates never touch them.
+Double-click **Rentals Control.bat**. It shows whether the site is running and reachable at your public address,
+the live log, and **Start / Stop / Restart** and **Turn off completely**, plus buttons for the log and backup folders.
+It keeps working while the website is stopped. It runs on `127.0.0.1:3003`, separate from Shuttle Control (3001).
 
-1. Stop the site. If it runs at startup, in an administrator PowerShell:
-   `Stop-ScheduledTask -TaskName "Rental Rates website"`
-   (or close the start-site window).
-2. Unzip the new version **over** the old folder and choose **Replace** for all files. Don't delete `data`.
-3. Start it again: `Start-ScheduledTask -TaskName "Rental Rates website"` (or double-click start-site.bat).
+## Staff side → Server tab (admins)
+
+- **Website switches:** turn the visitor side off (visitors see your message and phone number) or turn quote requests off.
+- **Server status:** running time, version, visits and response time, errors, memory, and a traffic chart for the last hour.
+- **Restart the site**, **Check for updates now**, and the list of recent updates.
+- **Backups:** made every night at 12:30 AM and kept 14 days in `data\backups`. **Back up now**, download, or **Restore**
+  (the current data is saved first).
+- **Server log** with filters and search. Daily log files are kept 14 days in `data\logs`.
+
+Only **admins** see the Server tab and the staff list. Under **Accounts**, admins can add staff and tick **Admin** for others.
+Everyone can change their own password there.
+
+## Updates install themselves
+
+While it runs (from start-rentals.bat or run-at-startup.ps1), the site checks GitHub every 5 minutes.
+When new changes are on the `main` branch, it downloads them and restarts in a couple of seconds.
+Set `AUTO_UPDATE=0` in `.env` to turn this off.
 
 ## 4. Put it on the internet with Cloudflare Tunnel
 
@@ -61,24 +90,27 @@ winget install Cloudflare.cloudflared
 
 **Quick test link** (changes every time):
 ```
-cloudflared tunnel --url http://localhost:8080
+cloudflared tunnel --url http://localhost:3002
 ```
 
 **Your own web address** (domain added to Cloudflare), easiest way:
 1. In the Cloudflare dashboard go to **Zero Trust → Networks → Tunnels → Create a tunnel**, choose **Cloudflared**, name it `rental-site`.
 2. Pick **Windows**. Copy the command it shows (`cloudflared.exe service install <long token>`) and run it in an **administrator** PowerShell. The tunnel now runs as a Windows service.
-3. Under **Public Hostname**, add e.g. `rates.yourdomain.com` → Service **HTTP** → `localhost:8080`.
+3. Under **Public Hostname**, add e.g. `rates.yourdomain.com` → Service **HTTP** → `localhost:3002`.
 
 The visitor side is then `https://rates.yourdomain.com` and the staff side `https://rates.yourdomain.com/staff`.
 
 ## Settings
 
-Set these in `start-site.bat` / `run-at-startup.ps1` if you need to change them.
+Set these in the `.env` file, then restart from Rentals Control.
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `PORT` | `8080` | Port to listen on |
+| `PORT` | `3002` | Port to listen on |
 | `HOST` | `127.0.0.1` | Only this PC can connect directly; Cloudflare Tunnel connects here. Use `0.0.0.0` to allow other PCs on your network |
+| `CONTROL_PORT` | `3003` | Rentals Control window (this PC only) |
+| `PUBLIC_URL` | — | Your public address, used by Rentals Control to check the site is reachable |
+| `AUTO_UPDATE` | `1` | Set to `0` to stop automatic updates from GitHub |
 | `DATA_DIR` | `.\data` | Where prices, requests and logins are saved |
 | `TRUST_PROXY` | `1` | Needed behind Cloudflare so login limits and secure cookies work |
 | `SESSION_HOURS` | `12` | How long a staff login lasts |
