@@ -24,6 +24,8 @@ function createBackups({ dataDir, log = console.log }) {
       const src = path.join(dataDir, f);
       if (fs.existsSync(src)) { fs.copyFileSync(src, path.join(dest, f)); n++; }
     }
+    const logos = path.join(dataDir, "logos");
+    if (fs.existsSync(logos)) fs.cpSync(logos, path.join(dest, "logos"), { recursive: true });
     log(`Backup made (${kind}): ${name}, ${n} file${n === 1 ? "" : "s"}.`);
     return name;
   }
@@ -71,6 +73,8 @@ function createBackups({ dataDir, log = console.log }) {
       fs.writeFileSync(tmp, JSON.stringify(value, null, 2));
       fs.renameSync(tmp, dest);
     }
+    const logos = path.join(dir, name, "logos");
+    if (fs.existsSync(logos)) fs.cpSync(logos, path.join(dataDir, "logos"), { recursive: true });
     log(`Backup restored: ${name}`, "warn");
     return incoming;
   }

@@ -235,19 +235,31 @@ function cleanSite(input, version) {
     })).filter(it => it.name),
   }));
   const sections = cleanSections(input.sections);
-  const reserved = new Set(["staff", "api", "vendor"]);
+  const reserved = new Set(["staff", "api", "vendor", "logos", "healthz"]);
   const slugs = new Set();
-  const partners = (Array.isArray(input.partners) ? input.partners : []).slice(0, 50).map(p => ({
-    label: str(p.label, 60), slug: str(p.slug, 40).toLowerCase().replace(/[^a-z0-9-]/g, ""),
+  const slugOf = v => str(v, 40).toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/^-+|-+$/g, "");
+  const free = sl => sl && !reserved.has(sl) && !slugs.has(sl) && !!slugs.add(sl);
+  const logoOf = v => LOGO_NAME.test(String(v || "")) ? String(v) : "";
+  // Categories first, so a location can never take a category's link.
+  const cats = (Array.isArray(input.partners) ? input.partners : []).slice(0, 50).map(p => ({
+    label: str(p.label, 60), slug: slugOf(p.slug),
     headline: str(p.headline, 100), message: str(p.message, 300),
     alsoMainSpecials: !!p.alsoMainSpecials, alsoRegular: !!p.alsoRegular,
-    sections: cleanSections(p.sections),
-  })).filter(p => p.label && p.slug && !reserved.has(p.slug) && !slugs.has(p.slug) && slugs.add(p.slug));
+    sections: cleanSections(p.sections), _locations: Array.isArray(p.locations) ? p.locations : [],
+  })).filter(p => p.label && free(p.slug));
+  const partners = cats.map(({ _locations, ...p }) => Object.assign(p, {
+    locations: _locations.slice(0, 200).map(l => ({
+      name: str(l.name, 80), slug: slugOf(l.slug), headline: str(l.headline, 100), message: str(l.message, 300),
+      logo: logoOf(l.logo), useOwnPrices: !!l.useOwnPrices, sections: l.useOwnPrices ? cleanSections(l.sections) : [],
+    })).filter(l => l.name && free(l.slug)),
+  }));
   return { version, updatedAt: new Date().toISOString(), settings, sections, partners };
 }
 
 /* ---------- static files ---------- */
-const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".txt": "text/plain; charset=utf-8" };
+const LOGO_NAME = /^[a-f0-9]{16}\.(png|jpg|webp)$/;
+const LOGO_DIR = path.join(DATA_DIR, "logos");
+const TYPES = { ".jpg": "image/jpeg", ".webp": "image/webp", ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".txt": "text/plain; charset=utf-8" };
 async function serveFile(res, file, status = 200) {
   try {
     const body = await fsp.readFile(file);
@@ -395,6 +407,23 @@ async function handle(req, res) {
       return json(res, 200, { ok: true });
     }
     /* ----- Server tab (admins only) ----- */
+    if (p === "/api/logos" && m === "POST") {
+      if (needUser()) return;
+      const b = await readBody(req, 2_200_000);
+      const mt = /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/.exec(String(b.dataUrl || ""));
+      if (!mt) return json(res, 400, { error: "bad_image", message: "Pick a PNG, JPG or WebP image." });
+      const buf = Buffer.from(mt[2], "base64");
+      if (buf.length > 1_500_000) return json(res, 400, { error: "too_big", message: "That image is over 1.5 MB. Use a smaller one." });
+      const ok = mt[1] === "png" ? buf.subarray(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47]))
+        : mt[1] === "jpeg" ? buf.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]))
+        : buf.subarray(0, 4).toString("latin1") === "RIFF" && buf.subarray(8, 12).toString("latin1") === "WEBP";
+      if (!ok) return json(res, 400, { error: "bad_image", message: "That file isn't a real PNG, JPG or WebP image." });
+      fs.mkdirSync(LOGO_DIR, { recursive: true });
+      const file = `${crypto.randomBytes(8).toString("hex")}.${mt[1] === "jpeg" ? "jpg" : mt[1]}`;
+      await fsp.writeFile(path.join(LOGO_DIR, file), buf);
+      console.log(`${user} uploaded a logo (${file}).`);
+      return json(res, 200, { file });
+    }
     if (p.startsWith("/api/server/")) {
       if (needAdmin()) return;
       const what = p.slice(12);
@@ -462,6 +491,10 @@ async function handle(req, res) {
   if (p === "/staff" || p === "/staff/") return serveFile(res, path.join(PUBLIC_DIR, "staff.html"));
   if (p === "/robots.txt") return send(res, 200, "User-agent: *\nDisallow: /staff\nDisallow: /api/\n", { "Content-Type": "text/plain" });
 
+  // uploaded partner logos
+  const lm = p.match(/^\/logos\/([a-f0-9]{16}\.(?:png|jpg|webp))$/);
+  if (lm) return serveFile(res, path.join(LOGO_DIR, lm[1]));
+
   // real files in /public
   const rel = decodeURIComponent(p).replace(/^\/+/, "");
   if (rel && rel.includes(".")) {
@@ -471,7 +504,7 @@ async function handle(req, res) {
   }
   // "/" and partner links like "/body-shop" all open the visitor page
   const slug = rel.replace(/\/+$/, "").toLowerCase();
-  if (!slug || (site.partners || []).some(x => x.slug === slug)) return serveFile(res, path.join(PUBLIC_DIR, "index.html"));
+  if (!slug || Rates.partnerOf(site, slug)) return serveFile(res, path.join(PUBLIC_DIR, "index.html"));
   return serveFile(res, path.join(PUBLIC_DIR, "index.html"), 404);
 }
 

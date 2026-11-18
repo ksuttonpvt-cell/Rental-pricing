@@ -43,17 +43,40 @@
   }
   function findItem(site, id) { return allItems(site).find(x => x.item.id === id); }
 
-  /* Partner pages: each partner has its own specials, plus optional main-site specials and regular prices. */
+  /* Partner pages.
+     Categories (e.g. Body shop) live in site.partners and have their own prices.
+     Each category can have locations (e.g. ABC Collision) with their own link, name and logo.
+     A location uses its category's prices unless it is set to use its own. */
   function partnerOf(site, slug) {
     slug = String(slug || "").toLowerCase();
-    return slug ? ((site && site.partners) || []).find(p => p.slug === slug) || null : null;
+    if (!slug) return null;
+    for (const cat of (site && site.partners) || []) {
+      if (cat.slug === slug) return Object.assign({ kind: "category" }, cat);
+      for (const loc of cat.locations || []) {
+        if (loc.slug !== slug) continue;
+        return {
+          kind: "location", category: cat, slug: loc.slug, label: loc.name, logo: loc.logo || "",
+          headline: loc.headline || `${loc.name} customer rental rates`,
+          message: loc.message || cat.message || "",
+          sections: loc.useOwnPrices ? (loc.sections || []) : (cat.sections || []),
+          alsoMainSpecials: cat.alsoMainSpecials, alsoRegular: cat.alsoRegular,
+        };
+      }
+    }
+    return null;
+  }
+  // "ABC Collision (Body shop)" or "Body shop"
+  function sourceLabel(site, slug) {
+    const p = partnerOf(site, slug);
+    if (!p) return slug || "";
+    return p.kind === "location" ? `${p.label} (${p.category.label})` : p.label;
   }
   function pageSections(site, slug) {
     const main = (site && site.sections) || [];
     const p = partnerOf(site, slug);
     if (!p) return main;
     // A partner page shows only its own prices. With none of its own yet, it shows regular pricing.
-    // Staff can tick "Also show..." on the page to add more.
+    // Staff can tick "Also show..." on the category to add more.
     const own = (p.sections || []).filter(s => (s.items || []).length);
     const hasOwn = own.length > 0;
     return [
@@ -61,10 +84,13 @@
       ...main.filter(s => s.kind === "special" ? !!p.alsoMainSpecials : (!hasOwn || !!p.alsoRegular))
     ];
   }
-  /* Every price anywhere, for the staff quote builder. Partner sections are labelled with the partner name. */
+  /* Every price anywhere, for the staff quote builder, labelled with the category or location name. */
   function allSections(site) {
     const out = [...((site && site.sections) || [])];
-    ((site && site.partners) || []).forEach(p => (p.sections || []).forEach(s => out.push(Object.assign({}, s, { title: `${p.label}: ${s.title}` }))));
+    ((site && site.partners) || []).forEach(p => {
+      (p.sections || []).forEach(s => out.push(Object.assign({}, s, { title: `${p.label}: ${s.title}` })));
+      (p.locations || []).forEach(l => { if (l.useOwnPrices) (l.sections || []).forEach(s => out.push(Object.assign({}, s, { title: `${l.name}: ${s.title}` }))); });
+    });
     return out;
   }
   const pageView = (site, slug) => ({ settings: (site && site.settings) || {}, sections: pageSections(site, slug), partners: (site && site.partners) || [] });
@@ -135,7 +161,7 @@
     return L.join("\n");
   }
 
-  const api = { round2, fmt, plural, lenName, esc, settingsOf, rates, priceFor, allItems, findItem, partnerOf, pageSections, allSections, pageView, staffView,parseDate, isoDate, niceDate, daysBetween, cleanDays, COMPARE, optionLabel, howItWorks, buildEmail, hoursLines };
+  const api = { round2, fmt, plural, lenName, esc, settingsOf, rates, priceFor, allItems, findItem, partnerOf, sourceLabel, pageSections, allSections, pageView, staffView,parseDate, isoDate, niceDate, daysBetween, cleanDays, COMPARE, optionLabel, howItWorks, buildEmail, hoursLines };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Rates = api;
 })(typeof window !== "undefined" ? window : globalThis);

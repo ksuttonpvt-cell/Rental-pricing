@@ -115,7 +115,7 @@
     const list = requests.filter(r => showDone || r.status !== "done");
     const partners = site.partners || [];
     $("req-list").innerHTML = list.length ? list.map(r => {
-      const src = r.source ? (partners.find(p => p.slug === r.source)?.label || r.source) : "Main visitor link";
+      const src = r.source ? R.sourceLabel(site, r.source) : "Main visitor link";
       return `<article class="req ${r.status !== "done" ? "new" : ""}" data-id="${R.esc(r.id)}">
         <div class="req-head"><h3>${R.esc(r.name)}</h3><span class="muted">${new Date(r.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })} · ${R.esc(src)}</span></div>
         <p>${[r.phone, r.email].filter(Boolean).map(R.esc).join(" · ")}</p>
@@ -298,6 +298,7 @@
     const view = R.pageView(site, p ? p.slug : "");
     const specials = view.sections.filter(s => s.kind === "special").flatMap(s => s.items).slice(0, 4);
     const title = p ? (p.headline || `${p.label} rental rates`) : "Rental Rates";
+    const logo = p && p.logo ? `<img class="logo" src="${location.origin}/logos/${R.esc(p.logo)}" alt="">` : "";
     const w = window.open("", "_blank");
     if (!w) { alertInline("Your browser blocked the print window. Allow pop-ups for this site and try again."); return; }
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${R.esc(title)}</title>
@@ -316,7 +317,9 @@
         .sp b { display: block; font-size: 16px; }
         .sp span { font-size: 28px; font-weight: 800; }
         .contact { font-size: 16px; color: #333; white-space: pre-line; }
+        .logo { display: block; max-height: 1.1in; max-width: 3.5in; margin: 0 auto 6px; object-fit: contain; }
       </style></head><body>
+      ${logo}
       <div class="biz">${R.esc(st.businessName || "")}</div>
       <h1>${R.esc(title)}</h1>
       ${p && p.message ? `<p class="msg">${R.esc(p.message)}</p>` : ""}
@@ -330,127 +333,271 @@
     setTimeout(() => { w.focus(); w.print(); }, 300);
   }
 
-  /* Partner pages */
-  let openSlug = null;      // slug of the page being edited ("" while a new page is unsaved)
+  /* Partner pages: categories (e.g. Body shop) and their locations (e.g. ABC Collision) */
+  const RESERVED = ["staff", "api", "vendor", "logos", "healthz"];
+  const slugify = v => String(v || "").toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+  const pageUrl = slug => `${location.origin}/${slug || ""}`;
+  const allSlugs = () => (site.partners || []).flatMap(c => [c.slug, ...(c.locations || []).map(l => l.slug)]);
+  let editing = null;   // { type: "cat" | "loc", cat: slug, loc: slug, isNew }
+  let draft = null;     // copy of the category or location being edited
   let pageEditor = null;
-  const pageUrl = p => `${location.origin}/${p ? p.slug : ""}`;
-  function renderPartners() {
-    const list = site.partners || [];
-    const main = { label: "Main visitor page", slug: "" };
-    const card = (p, isMain) => {
-      const url = isMain ? location.origin + "/" : pageUrl(p);
-      const own = (p.sections || []).reduce((n, s) => n + (s.items || []).length, 0);
-      const desc = isMain ? "Your regular prices and specials."
-        : own ? `Shows only its ${R.plural(own, "own price")}${p.alsoMainSpecials ? " + main specials" : ""}${p.alsoRegular ? " + regular prices" : ""}`
-              : `No prices of its own yet, so it shows regular pricing${p.alsoMainSpecials ? " + main specials" : ""}`;
-      const editing = !isMain && openSlug === p.slug;
-      return `<article class="partner-card" data-slug="${R.esc(p.slug)}" ${isMain ? 'data-main="1"' : ""}>
-        <div class="pc-top">
-          <div class="qr">${qrSvg(url)}</div>
-          <div class="pc-info">
-            <h3>${R.esc(p.label || "New partner page")}</h3>
-            <a class="link-url" href="${R.esc(url)}" target="_blank" rel="noopener">${R.esc(url)}</a>
-            <p class="muted">${R.esc(desc)}</p>
-            <div class="actions">
-              ${isMain ? "" : `<button class="btn small ${editing ? "" : "primary"}" type="button" data-act="edit">${editing ? "Close editor" : "Edit page"}</button>`}
-              <button class="btn small" type="button" data-act="copy" data-url="${R.esc(url)}">Copy link</button>
-              <button class="btn small" type="button" data-act="png" data-url="${R.esc(url)}">Download QR code</button>
-              <button class="btn small" type="button" data-act="print" data-url="${R.esc(url)}">Print sign</button>
-            </div>
-          </div>
+
+  const priceSummary = sections => {
+    const items = (sections || []).flatMap(s => s.items || []);
+    if (!items.length) return "";
+    const st = R.settingsOf(site);
+    return items.slice(0, 2).map(i => `${i.name} ${R.fmt(R.rates(i, st).daily)}/day`).join(" · ") + (items.length > 2 ? ` · +${items.length - 2} more` : "");
+  };
+  const linkActions = (slug, name) => `
+    <button class="btn small" type="button" data-act="copy" data-url="${R.esc(pageUrl(slug))}">Copy link</button>
+    <button class="btn small" type="button" data-act="png" data-url="${R.esc(pageUrl(slug))}" data-name="${R.esc(slug || "main")}">Download QR code</button>
+    <button class="btn small" type="button" data-act="print" data-slug="${R.esc(slug)}">Print sign</button>`;
+
+  function catEditorHtml(c) {
+    return `<div class="pc-edit">
+      <div class="ed-settings">
+        <div class="field"><label for="ce-label">Category name</label><input id="ce-label" value="${R.esc(c.label)}" maxlength="60" placeholder="e.g. Body shop"></div>
+        <div class="field"><label for="ce-slug">Link ending <span class="hint">(letters, numbers, dashes)</span></label><input id="ce-slug" value="${R.esc(c.slug)}" maxlength="40" placeholder="body-shop"></div>
+        <div class="field"><label for="ce-headline">Page headline</label><input id="ce-headline" value="${R.esc(c.headline || "")}" maxlength="100" placeholder="${R.esc((c.label || "Partner") + " rental rates")}"></div>
+        <div class="field"><label for="ce-message">Welcome message <span class="hint">(locations use it too unless they have their own)</span></label><textarea id="ce-message" rows="2" maxlength="300">${R.esc(c.message || "")}</textarea></div>
+      </div>
+      <h4 class="ed-h">Category prices</h4>
+      <p class="muted ed-note">Shown on the category page, and on every location in this category that doesn't have its own prices. If there are none, visitors see your regular pricing.</p>
+      <div class="editor" id="pe-sections"></div>
+      <label class="check"><input type="checkbox" id="ce-main" ${c.alsoMainSpecials ? "checked" : ""}> Also show the main page specials</label>
+      <label class="check"><input type="checkbox" id="ce-regular" ${c.alsoRegular ? "checked" : ""}> Also show regular prices</label>
+      <div class="sticky-save">
+        <span id="pe-msg" role="status"></span>
+        ${editing.isNew ? "" : `<button class="btn ghost danger" type="button" data-act="delete-cat">Delete category</button>`}
+        <button class="btn ghost" type="button" data-act="cancel">Cancel</button>
+        <button class="btn primary" type="button" data-act="save-cat">Save category</button>
+      </div>
+    </div>`;
+  }
+  function locEditorHtml(l, cat) {
+    return `<div class="pc-edit">
+      <div class="ed-settings">
+        <div class="field"><label for="le-name">Business name</label><input id="le-name" value="${R.esc(l.name)}" maxlength="80" placeholder="e.g. ABC Collision"></div>
+        <div class="field"><label for="le-slug">Link ending <span class="hint">(letters, numbers, dashes)</span></label><input id="le-slug" value="${R.esc(l.slug)}" maxlength="40" placeholder="abc-collision"></div>
+        <div class="field"><label for="le-headline">Page headline</label><input id="le-headline" value="${R.esc(l.headline || "")}" maxlength="100" placeholder="${R.esc((l.name || "Business") + " customer rental rates")}"></div>
+        <div class="field"><label for="le-message">Welcome message <span class="hint">(blank = the category's)</span></label><textarea id="le-message" rows="2" maxlength="300" placeholder="${R.esc(cat.message || "")}">${R.esc(l.message || "")}</textarea></div>
+      </div>
+      <div class="logo-row">
+        <div class="logo-box">${l.logo ? `<img src="/logos/${R.esc(l.logo)}" alt="${R.esc(l.name)} logo">` : `<span class="muted">No logo</span>`}</div>
+        <div class="field" style="margin:0">
+          <label for="le-logo">Logo <span class="hint">(PNG, JPG or WebP, up to 1.5 MB)</span></label>
+          <input id="le-logo" type="file" accept="image/png,image/jpeg,image/webp">
+          ${l.logo ? `<button class="btn small ghost danger" type="button" data-act="logo-remove" style="justify-self:start">Remove logo</button>` : ""}
+          <span id="le-logo-msg" role="status"></span>
         </div>
-        ${editing ? `<div class="pc-edit">
-          <div class="ed-settings">
-            <div class="field"><label for="pe-label">Partner name</label><input id="pe-label" value="${R.esc(p.label)}" maxlength="60" placeholder="e.g. Body shop"></div>
-            <div class="field"><label for="pe-slug">Link ending <span class="hint">(letters, numbers, dashes)</span></label><input id="pe-slug" value="${R.esc(p.slug)}" maxlength="40" placeholder="body-shop"></div>
-            <div class="field"><label for="pe-headline">Page headline</label><input id="pe-headline" value="${R.esc(p.headline || "")}" maxlength="100" placeholder="${R.esc((p.label || "Partner") + " rental rates")}"></div>
-            <div class="field"><label for="pe-message">Welcome message</label><textarea id="pe-message" rows="2" maxlength="300">${R.esc(p.message || "")}</textarea></div>
-          </div>
-          <p class="muted" style="margin:0;font-size:14px">Visitors on this page see only the prices below. If it has none yet, they see your regular pricing.</p>
-          <label class="check"><input type="checkbox" id="pe-main" ${p.alsoMainSpecials ? "checked" : ""}> Also show the main page specials</label>
-          <label class="check"><input type="checkbox" id="pe-regular" ${p.alsoRegular ? "checked" : ""}> Also show regular prices</label>
-          <h4 style="margin:12px 0 0;font-size:17px">Special prices for this page only</h4>
-          <div class="editor" id="pe-sections"></div>
-          <div class="sticky-save">
-            <span id="pe-msg" role="status"></span>
-            ${p.slug && list.some(x => x.slug === p.slug) ? `<button class="btn ghost danger" type="button" data-act="delete">Delete page</button>` : ""}
-            <button class="btn ghost" type="button" data-act="cancel">Cancel</button>
-            <button class="btn primary" type="button" data-act="save">Save page</button>
-          </div>
+      </div>
+      <h4 class="ed-h">Prices</h4>
+      <label class="check"><input type="radio" name="le-prices" value="cat" ${l.useOwnPrices ? "" : "checked"}> Use the ${R.esc(cat.label)} category prices${priceSummary(cat.sections) ? ` <span class="muted">(${R.esc(priceSummary(cat.sections))})</span>` : ""}</label>
+      <label class="check"><input type="radio" name="le-prices" value="own" ${l.useOwnPrices ? "checked" : ""}> Give this location its own prices</label>
+      ${l.useOwnPrices ? `<div class="editor" id="pe-sections"></div>` : ""}
+      <div class="sticky-save">
+        <span id="pe-msg" role="status"></span>
+        ${editing.isNew ? "" : `<button class="btn ghost danger" type="button" data-act="delete-loc">Delete location</button>`}
+        <button class="btn ghost" type="button" data-act="cancel">Cancel</button>
+        <button class="btn primary" type="button" data-act="save-loc">Save location</button>
+      </div>
+    </div>`;
+  }
+
+  function renderPartners() {
+    const cats = (site.partners || []).slice();
+    if (editing && editing.type === "cat" && editing.isNew) cats.push(draft);
+    const isEd = (type, cat, loc) => editing && editing.type === type && editing.cat === cat && (type === "cat" || editing.loc === loc);
+    const html = [`<article class="partner-card">
+      <div class="pc-top"><div class="qr">${qrSvg(pageUrl(""))}</div>
+        <div class="pc-info"><h3>Main visitor page</h3><a class="link-url" href="${R.esc(pageUrl(""))}" target="_blank" rel="noopener">${R.esc(pageUrl(""))}</a>
+          <p class="muted">Your regular prices and specials.</p><div class="actions">${linkActions("", "Main")}</div></div></div>
+    </article>`];
+    cats.forEach(c => {
+      const catKey = editing && editing.type === "cat" && editing.isNew && c === draft ? "\u0000new" : c.slug;
+      const editingCat = isEd("cat", catKey);
+      const shown = editingCat ? draft : c;
+      const locs = (c.locations || []).slice();
+      if (editing && editing.type === "loc" && editing.isNew && editing.cat === c.slug) locs.push(draft);
+      const own = priceSummary(c.sections);
+      html.push(`<article class="partner-card" data-cat="${R.esc(catKey)}">
+        <div class="pc-top"><div class="qr">${c.slug ? qrSvg(pageUrl(c.slug)) : ""}</div>
+          <div class="pc-info">
+            <span class="eyebrow" style="margin:0">Category</span>
+            <h3>${R.esc(shown.label || "New category")}</h3>
+            ${c.slug ? `<a class="link-url" href="${R.esc(pageUrl(c.slug))}" target="_blank" rel="noopener">${R.esc(pageUrl(c.slug))}</a>` : ""}
+            <p class="muted">${own ? R.esc(own) : "No prices of its own, so it shows regular pricing"} · ${R.plural((c.locations || []).length, "location")}</p>
+            <div class="actions">
+              ${c.slug ? `<button class="btn small ${editingCat ? "" : "primary"}" type="button" data-act="edit-cat">${editingCat ? "Close editor" : "Edit category"}</button>${linkActions(c.slug, c.label)}` : ""}
+            </div>
+          </div></div>
+        ${editingCat ? catEditorHtml(draft) : ""}
+        ${c.slug ? `<div class="loc-list">
+          ${locs.map(l => {
+            const locKey = editing && editing.type === "loc" && editing.isNew && l === draft ? "\u0000new" : l.slug;
+            const editingLoc = isEd("loc", c.slug, locKey);
+            const L = editingLoc ? draft : l;
+            const prices = l.useOwnPrices ? `Own prices: ${priceSummary(l.sections) || "none yet"}` : `Uses ${c.label} prices`;
+            return `<div class="loc" data-loc="${R.esc(locKey)}">
+              <div class="loc-top">
+                ${l.slug ? `<div class="qr small">${qrSvg(pageUrl(l.slug))}</div>` : `<div class="qr small"></div>`}
+                ${L.logo ? `<img class="loc-logo" src="/logos/${R.esc(L.logo)}" alt="">` : ""}
+                <div class="pc-info">
+                  <h4>${R.esc(L.name || "New location")}</h4>
+                  ${l.slug ? `<a class="link-url" href="${R.esc(pageUrl(l.slug))}" target="_blank" rel="noopener">${R.esc(pageUrl(l.slug))}</a>` : ""}
+                  <p class="muted">${R.esc(prices)}</p>
+                  ${l.slug ? `<div class="actions"><button class="btn small ${editingLoc ? "" : "primary"}" type="button" data-act="edit-loc">${editingLoc ? "Close editor" : "Edit"}</button>${linkActions(l.slug, l.name)}</div>` : ""}
+                </div>
+              </div>
+              ${editingLoc ? locEditorHtml(draft, c) : ""}
+            </div>`;
+          }).join("")}
+          <div><button class="btn small" type="button" data-act="add-loc">+ Add ${R.esc(c.label.toLowerCase())} location</button></div>
         </div>` : ""}
-      </article>`;
-    };
-    const editingNew = openSlug === "" ? [newPartnerDraft] : [];
-    $("partners").innerHTML = card(main, true) + list.map(p => card(p, false)).join("") + editingNew.map(p => card(p, false)).join("");
+      </article>`);
+    });
+    $("partners").innerHTML = html.join("");
+
     const mount = $("pe-sections");
     if (mount) {
-      const editingPartner = openSlug === "" ? newPartnerDraft : list.find(x => x.slug === openSlug);
       pageEditor = SectionsEditor(mount, {
-        prefix: "pe", getSections: () => editingPartner.sections || [],
-        specialTitle: `${editingPartner.label || "Partner"} specials`,
-        emptyText: "No special prices for this page yet. Add a specials section below."
+        prefix: "pe", getSections: () => draft.sections || [],
+        specialTitle: `${draft.label || draft.name || "Partner"} specials`,
+        emptyText: "No prices here yet. Add a specials section below."
       });
       pageEditor.reset();
     } else pageEditor = null;
   }
-  let newPartnerDraft = null;
-  $("add-partner").addEventListener("click", () => {
-    newPartnerDraft = {
-      label: "", slug: "", headline: "", message: "", alsoMainSpecials: false, alsoRegular: false,
-      sections: [{ id: uid(), title: "Specials", kind: "special", note: "", items: [{ id: uid(), name: "", detail: "", daily: 0, weekly: "", noWeekly: false, tag: "Special" }] }]
-    };
-    openSlug = "";
+
+  function startEdit(type, cat, loc, isNew, value) {
+    editing = { type, cat, loc, isNew };
+    draft = JSON.parse(JSON.stringify(value));
     renderPartners();
-    $("pe-label").focus();
+    const first = $(type === "cat" ? "ce-label" : "le-name");
+    if (first && isNew) first.focus();
+  }
+  function stopEdit() { editing = null; draft = null; renderPartners(); }
+  const blankSpecials = (title) => [{ id: uid(), title, kind: "special", note: "", items: [{ id: uid(), name: "", detail: "", daily: 0, weekly: "", noWeekly: false, tag: "Special" }] }];
+  // Pull typed values from the open editor into the draft (so re-drawing keeps them).
+  function readEditor() {
+    if (!editing) return;
+    const v = id => { const el = $(id); return el ? el.value.trim() : undefined; };
+    if (pageEditor) draft.sections = pageEditor.value();
+    if (editing.type === "cat") {
+      Object.assign(draft, { label: v("ce-label"), slug: slugify(v("ce-slug")), headline: v("ce-headline"), message: v("ce-message"),
+        alsoMainSpecials: $("ce-main").checked, alsoRegular: $("ce-regular").checked });
+    } else {
+      Object.assign(draft, { name: v("le-name"), slug: slugify(v("le-slug")), headline: v("le-headline"), message: v("le-message") });
+    }
+  }
+  function slugProblem(slug, own) {
+    if (!slug) return "Enter a link ending, like abc-collision.";
+    if (RESERVED.includes(slug)) return "That link ending is used by the site. Pick another.";
+    if (allSlugs().filter(s => s !== own).includes(slug)) return "Another page already uses that link ending.";
+    return "";
+  }
+
+  $("add-partner").addEventListener("click", () => {
+    startEdit("cat", "\u0000new", null, true, { label: "", slug: "", headline: "", message: "", alsoMainSpecials: false, alsoRegular: false, sections: blankSpecials("Specials"), locations: [] });
   });
   $("partners").addEventListener("input", e => {
-    if (e.target.id === "pe-slug") {
+    if (e.target.id === "ce-slug" || e.target.id === "le-slug") {
+      e.target.dataset.touched = "1";
       const v = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-");
       if (v !== e.target.value) e.target.value = v;
+    }
+    // New pages: fill the link ending from the name until it's typed by hand.
+    const pairs = { "ce-label": "ce-slug", "le-name": "le-slug" };
+    if (pairs[e.target.id] && editing && editing.isNew) {
+      const sl = $(pairs[e.target.id]);
+      if (sl && !sl.dataset.touched) sl.value = slugify(e.target.value);
+    }
+  });
+  $("partners").addEventListener("change", async e => {
+    if (e.target.name === "le-prices") {
+      readEditor();
+      draft.useOwnPrices = e.target.value === "own";
+      if (draft.useOwnPrices && !(draft.sections || []).length) {
+        const cat = site.partners.find(c => c.slug === editing.cat);
+        // Start from a copy of the category's prices so it's quick to tweak.
+        draft.sections = (cat.sections || []).length
+          ? JSON.parse(JSON.stringify(cat.sections)).map(s => Object.assign(s, { id: uid(), title: s.kind === "special" ? `${draft.name || "Location"} specials` : s.title, items: s.items.map(i => Object.assign(i, { id: uid() })) }))
+          : blankSpecials(`${draft.name || "Location"} specials`);
+      }
+      renderPartners();
+    }
+    if (e.target.id === "le-logo") {
+      const f = e.target.files[0]; if (!f) return;
+      const msg = $("le-logo-msg");
+      if (!/^image\/(png|jpeg|webp)$/.test(f.type)) return say(msg, "Pick a PNG, JPG or WebP image.");
+      if (f.size > 1_500_000) return say(msg, "That image is over 1.5 MB. Use a smaller one.");
+      msg.className = ""; msg.textContent = "Uploading…";
+      const dataUrl = await new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = bad; r.readAsDataURL(f); });
+      try {
+        const { file } = await api("/api/logos", { method: "POST", body: { dataUrl } });
+        readEditor(); draft.logo = file; renderPartners();
+        say($("le-logo-msg"), "Logo added. Click Save location to keep it.", true);
+      } catch (err) { say(msg, err.message); }
     }
   });
   $("partners").addEventListener("click", async e => {
     const b = e.target.closest("[data-act]"); if (!b) return;
-    const cardEl = b.closest("[data-slug]");
-    const slug = cardEl.dataset.slug;
-    const p = cardEl.dataset.main ? null : ((site.partners || []).find(x => x.slug === slug) || (openSlug === "" ? newPartnerDraft : null));
     const act = b.dataset.act;
+    const catEl = b.closest("[data-cat]"), locEl = b.closest("[data-loc]");
+    const catSlug = catEl && catEl.dataset.cat, locSlug = locEl && locEl.dataset.loc;
+    const cat = (site.partners || []).find(c => c.slug === catSlug);
+
     if (act === "copy") {
       try { await navigator.clipboard.writeText(b.dataset.url); b.textContent = "Copied"; } catch { b.textContent = "Copy failed"; }
-      setTimeout(() => b.textContent = "Copy link", 1500);
-    } else if (act === "png") downloadQr(b.dataset.url, p ? p.slug : "main");
-    else if (act === "print") printSign(b.dataset.url, p);
-    else if (act === "edit") { openSlug = openSlug === slug ? null : slug; newPartnerDraft = null; renderPartners(); }
-    else if (act === "cancel") { openSlug = null; newPartnerDraft = null; renderPartners(); }
-    else if (act === "delete") {
-      if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = "Click again to delete this page"; return; }
-      try { await saveSite(Object.assign({}, site, { partners: site.partners.filter(x => x.slug !== slug) })); openSlug = null; renderPartners(); }
-      catch (err) { say($("pe-msg"), err.message); }
-    } else if (act === "save") {
-      const reserved = ["staff", "api", "vendor"];
-      const next = {
-        label: $("pe-label").value.trim(),
-        slug: $("pe-slug").value.trim().replace(/^-+|-+$/g, ""),
-        headline: $("pe-headline").value.trim(),
-        message: $("pe-message").value.trim(),
-        alsoMainSpecials: $("pe-main").checked,
-        alsoRegular: $("pe-regular").checked,
-        sections: pageEditor ? pageEditor.value() : []
-      };
-      if (!next.label) return say($("pe-msg"), "Enter a partner name.");
-      if (!next.slug) return say($("pe-msg"), "Enter a link ending, like body-shop.");
-      if (reserved.includes(next.slug)) return say($("pe-msg"), "That link ending is used by the site. Pick another.");
-      const others = (site.partners || []).filter(x => x.slug !== (openSlug || "\u0000"));
-      if (others.some(x => x.slug === next.slug)) return say($("pe-msg"), "Another page already uses that link ending.");
-      const partners = openSlug === "" ? [...(site.partners || []), next] : (site.partners || []).map(x => x.slug === openSlug ? next : x);
-      b.disabled = true; $("pe-msg").className = ""; $("pe-msg").textContent = "Saving…";
-      try {
-        await saveSite(Object.assign({}, site, { partners }));
-        openSlug = null; newPartnerDraft = null; renderPartners();
-        alertInline(`Saved “${next.label}”. Its page is live at ${location.origin}/${next.slug}`);
-      } catch (err) { b.disabled = false; say($("pe-msg"), err.message); }
+      setTimeout(() => b.textContent = "Copy link", 1500); return;
+    }
+    if (act === "png") return downloadQr(b.dataset.url, b.dataset.name);
+    if (act === "print") return printSign(pageUrl(b.dataset.slug), b.dataset.slug ? R.partnerOf(site, b.dataset.slug) : null);
+    if (act === "cancel") return stopEdit();
+    if (act === "edit-cat") return isOpen("cat", catSlug) ? stopEdit() : startEdit("cat", catSlug, null, false, cat);
+    if (act === "edit-loc") return isOpen("loc", catSlug, locSlug) ? stopEdit() : startEdit("loc", catSlug, locSlug, false, cat.locations.find(l => l.slug === locSlug));
+    if (act === "add-loc") return startEdit("loc", catSlug, "\u0000new", true, { name: "", slug: "", headline: "", message: "", logo: "", useOwnPrices: false, sections: [] });
+    if (act === "logo-remove") { readEditor(); draft.logo = ""; return renderPartners(); }
+
+    const msg = $("pe-msg");
+    async function commit(partners, done) {
+      b.disabled = true; msg.className = ""; msg.textContent = "Saving…";
+      try { await saveSite(Object.assign({}, site, { partners })); stopEdit(); if (done) alertInline(done); }
+      catch (err) { b.disabled = false; say(msg, err.message); }
+    }
+    if (act === "delete-cat" || act === "delete-loc") {
+      if (!b.dataset.armed) {
+        b.dataset.armed = "1";
+        b.textContent = act === "delete-cat" && (cat.locations || []).length ? `Click again: deletes ${R.plural(cat.locations.length, "location")} too` : "Click again to delete";
+        return;
+      }
+      if (act === "delete-cat") return commit(site.partners.filter(c => c.slug !== editing.cat));
+      return commit(site.partners.map(c => c.slug !== editing.cat ? c : Object.assign({}, c, { locations: c.locations.filter(l => l.slug !== editing.loc) })));
+    }
+    if (act === "save-cat") {
+      readEditor();
+      if (!draft.label) return say(msg, "Enter a category name.");
+      const problem = slugProblem(draft.slug, editing.isNew ? null : editing.cat);
+      if (problem) return say(msg, problem);
+      const next = Object.assign({}, draft, { locations: draft.locations || [] });
+      const partners = editing.isNew ? [...(site.partners || []), next] : site.partners.map(c => c.slug === editing.cat ? next : c);
+      return commit(partners, `Saved “${next.label}”. Its page is live at ${pageUrl(next.slug)}`);
+    }
+    if (act === "save-loc") {
+      readEditor();
+      if (!draft.name) return say(msg, "Enter the business name.");
+      const problem = slugProblem(draft.slug, editing.isNew ? null : editing.loc);
+      if (problem) return say(msg, problem);
+      if (!draft.useOwnPrices) draft.sections = [];
+      const next = Object.assign({}, draft);
+      const partners = site.partners.map(c => c.slug !== editing.cat ? c : Object.assign({}, c, {
+        locations: editing.isNew ? [...(c.locations || []), next] : c.locations.map(l => l.slug === editing.loc ? next : l)
+      }));
+      return commit(partners, `Saved “${next.name}”. Its page is live at ${pageUrl(next.slug)}`);
     }
   });
+  function isOpen(type, cat, loc) { return editing && editing.type === type && editing.cat === cat && (type === "cat" || editing.loc === loc); }
+
   /* Accounts */
   async function loadUsers() {
     const { users } = await api("/api/users");

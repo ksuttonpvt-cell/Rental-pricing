@@ -52,6 +52,7 @@
     $("top-hours").textContent = R.hoursLines(st.hours)[0] || "";
     if (st.phone) { $("top-phone").hidden = false; $("top-phone").textContent = st.phone; $("top-phone").href = telHref(st.phone); }
 
+    if (partner && partner.logo) { const img = $("partner-logo"); img.src = `/logos/${partner.logo}`; img.alt = `${partner.label} logo`; img.hidden = false; }
     if (partner && partner.message) { $("partner-banner").hidden = false; $("partner-banner").textContent = partner.message; }
 
     const mount = $("sections");
