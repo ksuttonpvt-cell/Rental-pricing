@@ -77,6 +77,8 @@
   function cleanDays(n) { const d = Math.round(Number(n)); return Number.isFinite(d) && d >= 1 ? Math.min(d, 365) : 1; }
 
   const COMPARE = [1, 3, 7, 14, 21, 30];
+  // Hours can be typed on separate lines or on one line split with "|".
+  const hoursLines = h => String(h || "").split(/\n|\|/).map(x => x.trim()).filter(Boolean);
   const optionLabel = r => `${r.model ? r.model + " · " : ""}${r.item.name}`;
 
   function howItWorks(settings, rows) {
@@ -129,7 +131,7 @@
     return L.join("\n");
   }
 
-  const api = { round2, fmt, plural, lenName, esc, settingsOf, rates, priceFor, allItems, findItem, partnerOf, pageSections, allSections, pageView, staffView,parseDate, isoDate, niceDate, daysBetween, cleanDays, COMPARE, optionLabel, howItWorks, buildEmail };
+  const api = { round2, fmt, plural, lenName, esc, settingsOf, rates, priceFor, allItems, findItem, partnerOf, pageSections, allSections, pageView, staffView,parseDate, isoDate, niceDate, daysBetween, cleanDays, COMPARE, optionLabel, howItWorks, buildEmail, hoursLines };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Rates = api;
 })(typeof window !== "undefined" ? window : globalThis);

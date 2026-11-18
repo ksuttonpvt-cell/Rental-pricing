@@ -41,7 +41,7 @@
         <p class="lede" style="margin:0 auto 14px">${R.esc(st.offlineMessage || "Our rental prices page is being updated. Please call us for a quote.")}</p>
         ${st.phone ? `<p><a class="btn primary" href="${R.esc(telHref(st.phone))}">Call ${R.esc(st.phone)}</a></p>` : ""}
         ${st.address ? `<p class="muted" style="white-space:pre-line">${R.esc(st.address)}</p>` : ""}
-        ${st.hours ? `<p class="muted" style="white-space:pre-line">${R.esc(st.hours)}</p>` : ""}
+        ${st.hours ? `<p class="muted" style="white-space:pre-line">${R.esc(R.hoursLines(st.hours).join("\n"))}</p>` : ""}
       </section>`;
       return;
     }
@@ -49,7 +49,7 @@
     $("brand").textContent = name;
     $("foot-name").textContent = `© ${new Date().getFullYear()} ${name}`;
     if (st.tagline) $("tagline").textContent = st.tagline;
-    $("top-hours").textContent = (st.hours || "").split("\n")[0] || "";
+    $("top-hours").textContent = R.hoursLines(st.hours)[0] || "";
     if (st.phone) { $("top-phone").hidden = false; $("top-phone").textContent = st.phone; $("top-phone").href = telHref(st.phone); }
 
     if (partner && partner.message) { $("partner-banner").hidden = false; $("partner-banner").textContent = partner.message; }
@@ -104,7 +104,7 @@
     $("fuel-card").hidden = !fuel;
     $("fuel-price").textContent = fuel ? R.fmt(fuel) : "";
     $("v-address").textContent = st.address || "";
-    $("v-hours").textContent = st.hours || "";
+    $("v-hours").textContent = R.hoursLines(st.hours).join("\n");
     if (st.phone) { $("v-phone").hidden = false; $("v-phone").textContent = st.phone; $("v-phone").href = telHref(st.phone); }
     if (st.email) { $("v-email").hidden = false; $("v-email").textContent = st.email; $("v-email").href = "mailto:" + st.email; }
     const map = st.mapUrl || (st.address ? "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent((st.businessName ? st.businessName + " " : "") + st.address) : "");

@@ -324,7 +324,7 @@
       <div class="qr">${qrSvg(url)}</div>
       <div class="scan">Scan for prices and a free estimate</div>
       <div class="url">${R.esc(url.replace(/^https?:\/\//, ""))}</div>
-      <div class="contact">${R.esc([st.phone, st.address].filter(Boolean).join("\n"))}</div>
+      <div class="contact">${R.esc([st.phone, st.address, ...R.hoursLines(st.hours)].filter(Boolean).join("\n"))}</div>
       </body></html>`);
     w.document.close();
     setTimeout(() => { w.focus(); w.print(); }, 300);
