@@ -167,6 +167,10 @@ textarea { resize: vertical; }
 .start-box { background: var(--deal-soft); border: 2px solid var(--deal); border-radius: 14px; padding: 16px 18px; display: grid; gap: 6px; justify-items: start; }
 .start-box h3 { font-size: 20px; }
 .start-box p { margin: 0 0 4px; font-size: 14px; color: var(--muted); }
+.shuttle-box { border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 14px 18px; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
+.shuttle-box > div { min-width: 0; flex: 1 1 220px; }
+.shuttle-box h3 { font-size: 17px; }
+.shuttle-box p { margin: 2px 0 0; font-size: 14px; color: var(--muted); }
 .summary li.fee { font-size: 13px; color: var(--muted); padding-block: 6px; }
 .info-card h3 { font-size: 18px; margin-bottom: 6px; }
 .info-card p { margin: 0 0 6px; white-space: pre-line; }

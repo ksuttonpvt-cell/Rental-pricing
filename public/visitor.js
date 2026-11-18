@@ -107,6 +107,13 @@
       for (const id of ["start-link", "top-start"]) { $(id).href = st.startUrl; $(id).textContent = st.startLabel || "Start your rental"; $(id).hidden = false; }
       $("start-box").hidden = false;
     }
+    if (/^https:\/\//.test(st.shuttleUrl || "")) {
+      const miles = Number(st.shuttleMiles);
+      $("shuttle-note").textContent = `Our shuttle can bring you to pick it up${miles ? ` if you're within ${miles} miles` : ""}.`;
+      $("shuttle-link").href = st.shuttleUrl; $("shuttle-box").hidden = false;
+      $("v-shuttle").href = st.shuttleUrl; $("v-shuttle-wrap").hidden = false;
+      if (miles) $("v-shuttle").textContent = `Need a ride? Request a shuttle (within ${miles} miles)`;
+    }
     const terms = R.termLines(st);
     $("terms-card").hidden = !terms.length;
     $("terms-list").innerHTML = terms.map(t => `<li>${R.esc(t)}</li>`).join("");
