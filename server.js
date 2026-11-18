@@ -240,7 +240,7 @@ function cleanSite(input, version) {
   const partners = (Array.isArray(input.partners) ? input.partners : []).slice(0, 50).map(p => ({
     label: str(p.label, 60), slug: str(p.slug, 40).toLowerCase().replace(/[^a-z0-9-]/g, ""),
     headline: str(p.headline, 100), message: str(p.message, 300),
-    showMainSpecials: p.showMainSpecials !== false, showRegular: p.showRegular !== false,
+    alsoMainSpecials: !!p.alsoMainSpecials, alsoRegular: !!p.alsoRegular,
     sections: cleanSections(p.sections),
   })).filter(p => p.label && p.slug && !reserved.has(p.slug) && !slugs.has(p.slug) && slugs.add(p.slug));
   return { version, updatedAt: new Date().toISOString(), settings, sections, partners };

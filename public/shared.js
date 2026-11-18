@@ -52,9 +52,13 @@
     const main = (site && site.sections) || [];
     const p = partnerOf(site, slug);
     if (!p) return main;
+    // A partner page shows only its own prices. With none of its own yet, it shows regular pricing.
+    // Staff can tick "Also show..." on the page to add more.
+    const own = (p.sections || []).filter(s => (s.items || []).length);
+    const hasOwn = own.length > 0;
     return [
-      ...(p.sections || []),
-      ...main.filter(s => s.kind === "special" ? p.showMainSpecials !== false : p.showRegular !== false)
+      ...own,
+      ...main.filter(s => s.kind === "special" ? !!p.alsoMainSpecials : (!hasOwn || !!p.alsoRegular))
     ];
   }
   /* Every price anywhere, for the staff quote builder. Partner sections are labelled with the partner name. */

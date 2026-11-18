@@ -95,8 +95,6 @@
       "slug": "body-shop",
       "message": "Welcome, body shop customers. Here are our current rental rates.",
       "headline": "Body shop customer rental rates",
-      "showMainSpecials": true,
-      "showRegular": true,
       "sections": [
         {
           "id": "bs-specials",
@@ -115,15 +113,15 @@
             }
           ]
         }
-      ]
+      ],
+      "alsoMainSpecials": false,
+      "alsoRegular": false
     },
     {
       "label": "Repair shop",
       "slug": "repair-shop",
       "message": "Welcome, repair shop customers. Here are our current rental rates.",
       "headline": "Repair shop customer rental rates",
-      "showMainSpecials": true,
-      "showRegular": true,
       "sections": [
         {
           "id": "rs-specials",
@@ -142,25 +140,27 @@
             }
           ]
         }
-      ]
+      ],
+      "alsoMainSpecials": false,
+      "alsoRegular": false
     },
     {
       "label": "Hotel guests",
       "slug": "hotels",
       "message": "Welcome, hotel guests. Here are our current rental rates.",
       "headline": "Hotel guest rental rates",
-      "showMainSpecials": false,
-      "showRegular": true,
-      "sections": []
+      "sections": [],
+      "alsoMainSpecials": false,
+      "alsoRegular": false
     },
     {
       "label": "Travel agents",
       "slug": "travel-agents",
       "message": "Welcome, travel agents. Here are our current rental rates.",
       "headline": "Travel agent rental rates",
-      "showMainSpecials": false,
-      "showRegular": true,
-      "sections": []
+      "sections": [],
+      "alsoMainSpecials": false,
+      "alsoRegular": false
     }
   ]
 }

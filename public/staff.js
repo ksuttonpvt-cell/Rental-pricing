@@ -341,7 +341,8 @@
       const url = isMain ? location.origin + "/" : pageUrl(p);
       const own = (p.sections || []).reduce((n, s) => n + (s.items || []).length, 0);
       const desc = isMain ? "Your regular prices and specials."
-        : `${own ? R.plural(own, "special price") : "No special prices yet"} · ${p.showMainSpecials !== false ? "also shows" : "hides"} main specials · ${p.showRegular !== false ? "shows" : "hides"} regular prices`;
+        : own ? `Shows only its ${R.plural(own, "own price")}${p.alsoMainSpecials ? " + main specials" : ""}${p.alsoRegular ? " + regular prices" : ""}`
+              : `No prices of its own yet, so it shows regular pricing${p.alsoMainSpecials ? " + main specials" : ""}`;
       const editing = !isMain && openSlug === p.slug;
       return `<article class="partner-card" data-slug="${R.esc(p.slug)}" ${isMain ? 'data-main="1"' : ""}>
         <div class="pc-top">
@@ -365,8 +366,9 @@
             <div class="field"><label for="pe-headline">Page headline</label><input id="pe-headline" value="${R.esc(p.headline || "")}" maxlength="100" placeholder="${R.esc((p.label || "Partner") + " rental rates")}"></div>
             <div class="field"><label for="pe-message">Welcome message</label><textarea id="pe-message" rows="2" maxlength="300">${R.esc(p.message || "")}</textarea></div>
           </div>
-          <label class="check"><input type="checkbox" id="pe-main" ${p.showMainSpecials !== false ? "checked" : ""}> Also show the main page specials</label>
-          <label class="check"><input type="checkbox" id="pe-regular" ${p.showRegular !== false ? "checked" : ""}> Also show regular prices</label>
+          <p class="muted" style="margin:0;font-size:14px">Visitors on this page see only the prices below. If it has none yet, they see your regular pricing.</p>
+          <label class="check"><input type="checkbox" id="pe-main" ${p.alsoMainSpecials ? "checked" : ""}> Also show the main page specials</label>
+          <label class="check"><input type="checkbox" id="pe-regular" ${p.alsoRegular ? "checked" : ""}> Also show regular prices</label>
           <h4 style="margin:12px 0 0;font-size:17px">Special prices for this page only</h4>
           <div class="editor" id="pe-sections"></div>
           <div class="sticky-save">
@@ -394,7 +396,7 @@
   let newPartnerDraft = null;
   $("add-partner").addEventListener("click", () => {
     newPartnerDraft = {
-      label: "", slug: "", headline: "", message: "", showMainSpecials: true, showRegular: true,
+      label: "", slug: "", headline: "", message: "", alsoMainSpecials: false, alsoRegular: false,
       sections: [{ id: uid(), title: "Specials", kind: "special", note: "", items: [{ id: uid(), name: "", detail: "", daily: 0, weekly: "", noWeekly: false, tag: "Special" }] }]
     };
     openSlug = "";
@@ -431,8 +433,8 @@
         slug: $("pe-slug").value.trim().replace(/^-+|-+$/g, ""),
         headline: $("pe-headline").value.trim(),
         message: $("pe-message").value.trim(),
-        showMainSpecials: $("pe-main").checked,
-        showRegular: $("pe-regular").checked,
+        alsoMainSpecials: $("pe-main").checked,
+        alsoRegular: $("pe-regular").checked,
         sections: pageEditor ? pageEditor.value() : []
       };
       if (!next.label) return say($("pe-msg"), "Enter a partner name.");
