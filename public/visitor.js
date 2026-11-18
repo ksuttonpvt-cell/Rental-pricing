@@ -103,6 +103,10 @@
 
     $("how").textContent = R.howItWorks(st, []).filter(l => !l.startsWith("Fuel")).join(" ");
     $("terms").textContent = st.terms || "";
+    if (/^https:\/\//.test(st.startUrl || "")) {
+      for (const id of ["start-link", "top-start"]) { $(id).href = st.startUrl; $(id).textContent = st.startLabel || "Start your rental"; $(id).hidden = false; }
+      $("start-box").hidden = false;
+    }
     const terms = R.termLines(st);
     $("terms-card").hidden = !terms.length;
     $("terms-list").innerHTML = terms.map(t => `<li>${R.esc(t)}</li>`).join("");

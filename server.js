@@ -234,6 +234,7 @@ function cleanSite(input, version) {
     weeklyDiscount: num(s.weeklyDiscount, 0, 100), fuelPerGallon: num(s.fuelPerGallon, 0, 1000),
     terms: str(s.terms, 600), contact: str(s.contact, 300),
     directPhone: str(s.directPhone, 40), roadsidePhone: str(s.roadsidePhone, 40),
+    startUrl: /^https:\/\//.test(str(s.startUrl, 500)) ? str(s.startUrl, 500) : "", startLabel: str(s.startLabel, 40),
     dailyRentalFee: num(s.dailyRentalFee, 0, 1000), taxRate: rate(s.taxRate), servicesFeeRate: rate(s.servicesFeeRate),
     rentalTerms: str(s.rentalTerms, 3000),
     visitorSiteOn: s.visitorSiteOn !== false, requestsOn: s.requestsOn !== false,

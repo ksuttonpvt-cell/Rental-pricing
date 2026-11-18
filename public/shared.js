@@ -25,6 +25,8 @@
       businessName: "", tagline: "", phone: "", email: "", address: "", hours: "", mapUrl: "",
       weeklyDiscount: 30, fuelPerGallon: 10, terms: "", contact: "",
       directPhone: "", roadsidePhone: "(800) 599-6766",
+      // Link to the rental software's form, so customers can fill in their details ahead of time.
+      startUrl: "https://hyperdrivepro.com/smartlink/qr/1afe185c69aa21952fc6ab10", startLabel: "Start your rental",
       // Taxes and fees, worked out like page 1 of the rental agreement.
       dailyRentalFee: 5.57, taxRate: 9.195, servicesFeeRate: 3.95,
       rentalTerms: DEFAULT_TERMS
@@ -202,6 +204,7 @@
     const terms = termLines(st);
     if (terms.length) { L.push("", "GOOD TO KNOW BEFORE YOU RENT"); terms.forEach(t => L.push("  - " + t)); }
     if (st.terms) L.push("", st.terms);
+    if (st.startUrl) L.push("", "READY TO RENT?", `  ${st.startLabel || "Start your rental"} ahead of time, so pick-up is quick:`, `  ${st.startUrl}`);
     const contact = [st.contact, st.businessName, st.phone && `Main: ${st.phone}`, st.directPhone && `Direct: ${st.directPhone}`, st.address].filter(Boolean);
     if (contact.length) L.push("", ...contact);
     return L.join("\n");
