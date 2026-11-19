@@ -130,7 +130,7 @@ footer { padding-block: 30px 90px; color: var(--muted); font-size: 13px; }
   .top nav { display: none; }
   .sticky { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--surface); border-top: 1px solid var(--line); padding: 10px max(12px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); }
 }
-@media (max-width: 480px) { .who, .needs { grid-template-columns: 1fr; } .top .right .btn:not(.primary), .top .phone { display: none; } .brand { font-size: 17px; } }
+@media (max-width: 480px) { .who, .needs { grid-template-columns: 1fr; } .top .right .btn:not(.primary), .top .phone { display: none; } .top .brand { font-size: 17px; white-space: normal; } }
 
 /* Refer a customer */
 .refer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 24px; align-items: start; }
