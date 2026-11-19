@@ -119,6 +119,14 @@
         if (only) { only.itemId = itemId; only.touched = true; render(); }
         else this.add(itemId);
       },
+      // Start (or add) an option for a vehicle with pick-up and return dates, from the price box.
+      quoteDates(itemId, start, end) {
+        const only = opts.length === 1 && !opts[0].touched ? opts[0] : null;
+        const o = only || newOpt(itemId);
+        Object.assign(o, { itemId, mode: "dates", start, end, touched: true });
+        if (!only) opts.push(o);
+        render();
+      },
       reset() { opts = []; this.setSite(site); },
       rows,
       sum() { return round2(rows().reduce((s, r) => s + r.p.total, 0)); },

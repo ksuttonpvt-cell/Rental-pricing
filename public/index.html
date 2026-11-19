@@ -24,15 +24,31 @@
   </div>
 </div>
 
-<header class="hero wrap" id="hero">
-  <div class="hero-text">
-    <img id="partner-logo" class="partner-logo" alt="" hidden>
-    <p class="eyebrow" id="tagline">Car, SUV &amp; truck rentals</p>
-    <h1 id="hero-title">Rental Rates</h1>
-    <p class="lede" id="hero-lede">See every price and special, then build your own estimate for any vehicle and any length of rental.</p>
-    <div class="partner-banner" id="partner-banner" hidden></div>
+<header class="hero2" id="hero">
+  <div class="hero2-bg" id="hero-bg" aria-hidden="true"></div>
+  <div class="wrap hero2-inner">
+    <div class="hero-text">
+      <img id="partner-logo" class="partner-logo" alt="" hidden>
+      <p class="eyebrow" id="tagline">Car, SUV &amp; truck rentals</p>
+      <h1 id="hero-title">Rental Rates</h1>
+      <p class="lede" id="hero-lede">Pick a vehicle and your dates to see the total with taxes and fees.</p>
+      <div class="partner-banner" id="partner-banner" hidden></div>
+      <ul class="chips" id="hero-chips"></ul>
+    </div>
+    <form class="qq" id="qq" aria-labelledby="qq-h" novalidate>
+      <h2 id="qq-h">Your price</h2>
+      <div class="field"><label for="qq-car">Vehicle</label><select id="qq-car"></select></div>
+      <div class="two">
+        <div class="field"><label for="qq-start">Pick-up</label><input type="date" id="qq-start"></div>
+        <div class="field"><label for="qq-end">Return</label><input type="date" id="qq-end"></div>
+      </div>
+      <div class="qq-total" aria-live="polite"><span class="money" id="qq-total">$0.00</span><small id="qq-sub"></small></div>
+      <div class="qq-actions">
+        <a class="btn primary" id="qq-start-link" target="_blank" rel="noopener" hidden>Start your rental</a>
+        <button class="btn" type="button" id="qq-more">Compare or request a quote</button>
+      </div>
+    </form>
   </div>
-  <img id="hero-photo" class="hero-photo" alt="" hidden>
 </header>
 <section class="wrap partner-info" id="partner-info" hidden aria-label="About this rental program"></section>
 
@@ -118,6 +134,11 @@
     </div>
   </section>
 </main>
+
+<nav class="mbar" id="mbar" aria-label="Quick actions">
+  <a class="btn" id="mbar-call" hidden>Call</a>
+  <a class="btn primary" href="#hero">Get a price</a>
+</nav>
 
 <footer>
   <div class="wrap">

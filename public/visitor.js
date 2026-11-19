@@ -33,7 +33,7 @@
       root.setProperty("--accent-ink", lum > 0.6 ? "#111" : "#fff");
       root.setProperty("--accent-soft", `color-mix(in srgb, ${d.accent} 14%, var(--bg))`);
     }
-    $("hero").classList.toggle("photo-left", d.photoSide === "left");
+    $("hero").classList.toggle("side-left", d.photoSide === "left");
     const bg = R.photoUrl(d.bg);
     $("page-bg").hidden = !bg;
     if (bg) {
@@ -59,7 +59,7 @@
       $("brand").textContent = name;
       $("foot-name").textContent = `© ${new Date().getFullYear()} ${name}`;
       if (st.phone) { $("top-phone").hidden = false; $("top-phone").textContent = st.phone; $("top-phone").href = telHref(st.phone); }
-      document.querySelector(".hero").hidden = true;
+      $("hero").hidden = true; $("mbar").hidden = true;
       document.querySelector("main").innerHTML = `<section class="panel offline">
         <h2>${R.esc(name)}</h2>
         <p class="lede" style="margin:0 auto 14px">${R.esc(st.offlineMessage || "Our rental prices page is being updated. Please call us for a quote.")}</p>
@@ -73,13 +73,11 @@
     if (!content) {
       if (design.sub) $("hero-lede").textContent = design.sub;
     }
-    if (!content && R.photoUrl(st.heroPhoto)) {
-      $("hero-photo").src = R.photoUrl(st.heroPhoto); $("hero-photo").alt = "A rental 4Runner at the dealership"; $("hero-photo").hidden = false; $("hero").classList.add("hero-split");
-    }
+    // The page's photo is the banner behind the headline and price box.
+    const heroPhoto = R.photoUrl(content ? content.photo : st.heroPhoto);
+    if (heroPhoto) $("hero-bg").style.backgroundImage = `url("${heroPhoto}")`;
     if (content) {
       $("hero-lede").textContent = content.sub || "Rental prices, plus an estimate tool for any vehicle and any length of rental.";
-      const photo = R.photoUrl(content.photo);
-      if (photo) { $("hero-photo").src = photo; $("hero-photo").alt = `Rental vehicle for ${partner.label} customers`; $("hero-photo").hidden = false; $("hero").classList.add("hero-split"); }
       const list = (title, items, cls, ordered) => items.length ? `<div class="pi-block ${cls}">${title ? `<h2>${R.esc(title)}</h2>` : ""}<${ordered ? "ol" : "ul"}>${items.map(x => `<li>${R.esc(x)}</li>`).join("")}</${ordered ? "ol" : "ul"}></div>` : "";
       const html = list("", content.benefits, "pi-benefits") + list(content.stepsTitle || "How it works", content.steps, "pi-steps", true) + list(content.whyTitle || "Why choose us", content.why, "pi-why");
       if (html) { $("partner-info").innerHTML = html; $("partner-info").hidden = false; }
@@ -91,6 +89,13 @@
     else if (st.tagline) $("tagline").textContent = st.tagline;
     $("top-hours").textContent = R.hoursLines(st.hours)[0] || "";
     if (st.phone) { $("top-phone").hidden = false; $("top-phone").textContent = st.phone; $("top-phone").href = telHref(st.phone); }
+    if (st.phone) { $("mbar-call").hidden = false; $("mbar-call").href = telHref(st.phone); $("mbar-call").textContent = "Call"; }
+    const chips = [];
+    if (st.shuttleOn !== false && st.shuttleUrl) chips.push(Number(st.shuttleMiles) ? `Free shuttle within ${Number(st.shuttleMiles)} mi` : "Free shuttle");
+    if (R.hasFees(st)) chips.push("Taxes & fees shown up front");
+    if (st.roadsidePhone) chips.push("24-hour roadside assistance");
+    chips.push("Late-model Toyotas");
+    $("hero-chips").innerHTML = chips.map(c => `<li>${R.esc(c)}</li>`).join("");
 
     if (partner && partner.logo) { const img = $("partner-logo"); img.src = `/logos/${partner.logo}`; img.alt = `${partner.label} logo`; img.hidden = false; }
     if (partner && partner.message) { $("partner-banner").hidden = false; $("partner-banner").textContent = partner.message; }
@@ -137,8 +142,8 @@
       mount.appendChild(el);
     });
     mount.querySelectorAll("[data-quote]").forEach(b => b.addEventListener("click", () => {
-      builder.quote(b.dataset.quote);
-      $("estimate").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      $("qq-car").value = b.dataset.quote; $("qq-car").dispatchEvent(new Event("change"));
+      $("hero").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
     }));
 
     $("how").textContent = R.howItWorks(st, []).filter(l => !l.startsWith("Fuel")).join(" ");
@@ -176,6 +181,38 @@
       $("req-form").innerHTML = `<h3 style="font-size:20px;margin-bottom:4px">Ready to book?</h3><p class="muted" style="margin:0;font-size:14px">${st.phone ? `Call us at <a href="${R.esc(telHref(st.phone))}">${R.esc(st.phone)}</a> and mention these options.` : "Contact us and mention these options."}</p>`;
     }
     builder.setSite(view);
+    setupQuickPrice(view, st);
+  }
+
+  /* The short price box in the banner. */
+  function setupQuickPrice(view, st) {
+    const items = R.allItems(view);
+    const sel = $("qq-car");
+    sel.innerHTML = (view.sections || []).filter(s => (s.items || []).length).map(sec =>
+      `<optgroup label="${R.esc(sec.title)}">${sec.items.map(it => `<option value="${R.esc(it.id)}">${R.esc(it.name)} – ${R.fmt(R.rates(it, st).daily)}/day</option>`).join("")}</optgroup>`).join("");
+    if (!items.length) { $("qq").hidden = true; return; }
+    const t = new Date(), day = 86400000;
+    const start = new Date(Date.UTC(t.getFullYear(), t.getMonth(), t.getDate() + 1));
+    if (!$("qq-start").value) $("qq-start").value = R.isoDate(start);
+    if (!$("qq-end").value) $("qq-end").value = R.isoDate(new Date(start.getTime() + 3 * day));
+    $("qq-start").min = R.isoDate(new Date(start.getTime() - day));
+    if (/^https:\/\//.test(st.startUrl || "")) { $("qq-start-link").href = st.startUrl; $("qq-start-link").textContent = st.startLabel || "Start your rental"; $("qq-start-link").hidden = false; }
+    const update = () => {
+      const f = R.findItem(view, sel.value); if (!f) return;
+      const a = $("qq-start").value, b = $("qq-end").value;
+      if (a && b && b <= a) $("qq-end").value = R.isoDate(new Date(R.parseDate(a).getTime() + day));
+      const asked = Math.round((R.parseDate($("qq-end").value) - R.parseDate(a)) / day);
+      const days = R.daysBetween(a, $("qq-end").value);
+      const p = R.priceFor(f.item, days, st);
+      $("qq-total").textContent = R.fmt(p.total);
+      $("qq-sub").textContent = `${R.lenName(days)} · ${R.totalNote(st)}${asked > R.MAX_DAYS ? ` · rentals are under 30 days, so this is for ${R.MAX_DAYS}` : ""}`;
+    };
+    ["qq-car", "qq-start", "qq-end"].forEach(id => { $(id).oninput = update; $(id).onchange = update; });
+    $("qq-more").onclick = () => {
+      builder.quoteDates(sel.value, $("qq-start").value, $("qq-end").value);
+      $("estimate").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    };
+    update();
   }
 
   $("req-form").addEventListener("submit", async e => {
