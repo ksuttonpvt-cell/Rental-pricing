@@ -44,7 +44,9 @@ body.hide-notes .note { display: none; }
 .top { background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
 .top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 12px; }
 .brand { font-family: var(--font-display); font-weight: 900; font-size: 20px; }
-.top nav { display: flex; gap: 18px; font-size: 14px; font-weight: 600; }
+.top nav { display: flex; gap: 16px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.top .brand, .top .phone { white-space: nowrap; }
+@media (max-width: 1180px) { .top nav { display: none; } }
 .top nav a { color: var(--ink); text-decoration: none; }
 .top .right { display: flex; gap: 10px; align-items: center; }
 .phone { font-weight: 700; color: var(--ink); text-decoration: none; }
@@ -128,6 +130,25 @@ footer { padding-block: 30px 90px; color: var(--muted); font-size: 13px; }
   .sticky { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--surface); border-top: 1px solid var(--line); padding: 10px max(12px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); }
 }
 @media (max-width: 480px) { .who, .needs { grid-template-columns: 1fr; } .top .right .btn:not(.primary), .top .phone { display: none; } .brand { font-size: 17px; } }
+
+/* Refer a customer */
+.refer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 24px; align-items: start; }
+.refer-intro { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: grid; gap: 12px; }
+.refer-intro .partner { display: flex; align-items: center; gap: 12px; }
+.refer-intro .logo { width: 52px; height: 52px; border-radius: 12px; background: #1d3557; color: #fff; display: grid; place-items: center; font-family: var(--font-display); font-weight: 900; }
+.refer-intro ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; color: var(--muted); }
+.refer-form { background: var(--surface); border: 2px solid var(--accent); border-radius: 16px; padding: 22px; display: grid; gap: 12px; }
+.refer-form h3 { font-size: 22px; }
+.refer-form .three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.refer-form .seg { display: flex; flex-wrap: wrap; gap: 4px 14px; border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px; background: var(--bg); }
+.refer-form .seg label { padding: 6px 4px; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+.refer-form .seg input { width: auto; }
+.refer-form textarea { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; width: 100%; resize: vertical; }
+.refer-done { background: #e6f4ea; color: #145c2e; border-radius: 12px; padding: 14px 16px; font-weight: 600; }
+@media (prefers-color-scheme: dark) { .refer-done { background: #123222; color: #8ee0a8; } }
+.hint { font-weight: 400; color: var(--muted); font-size: 12px; }
+@media (max-width: 860px) { .refer { grid-template-columns: 1fr; } .refer-form .three { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .refer-form .three, .refer-form .two { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -139,7 +160,7 @@ footer { padding-block: 30px 90px; color: var(--muted); font-size: 13px; }
 
 <header class="top"><div class="wrap">
   <span class="brand">Corwin Toyota Boulder · Rentals</span>
-  <nav aria-label="Sections"><a href="#fleet">Vehicles</a><a href="#who">Who it's for</a><a href="#need">What you need</a><a href="#faq">FAQ</a></nav>
+  <nav aria-label="Sections"><a href="#fleet">Vehicles</a><a href="#who">Who it's for</a><a href="#need">What you need</a><a href="#faq">FAQ</a><a href="#refer">Partners</a></nav>
   <div class="right"><a class="phone" href="#visit">(720) 907-0926</a><a class="btn small" href="#visit">Start your rental</a><a class="btn small primary" href="#quote">Get a price</a></div>
 </div></header>
 
@@ -221,13 +242,54 @@ footer { padding-block: 30px 90px; color: var(--muted); font-size: 13px; }
   <div class="note"><b>Change 6, a FAQ instead of long lists.</b> The 10 rules and the "How pricing works" text become short questions people can open. The page gets much shorter on phones.</div>
 </div></section>
 
+<section id="refer" style="padding-top:0"><div class="wrap">
+  <div class="sec-head"><h2>Refer a customer</h2><p>Shown on a partner's own page, for example a body shop's link.</p></div>
+  <div class="refer">
+    <div class="refer-intro">
+      <div class="partner"><span class="logo" aria-hidden="true">ABC</span><div><b>ABC Collision</b><br><span style="color:var(--muted);font-size:14px">Body shop partner · $34.99/day</span></div></div>
+      <p style="margin:0">Send us a customer in about 20 seconds. We call them, confirm a vehicle and get them moving.</p>
+      <ol>
+        <li>Fill in the customer's name and phone.</li>
+        <li>We reach them the same business day and book the rental at your partner rate.</li>
+        <li>You get a text when they pick up, and a monthly count of customers you sent.</li>
+      </ol>
+    </div>
+    <form class="refer-form" id="refer-form" novalidate>
+      <h3>Send a customer</h3>
+      <div class="two">
+        <div class="field"><label for="rf-shop">Your business</label><input id="rf-shop" value="ABC Collision" readonly></div>
+        <div class="field"><label for="rf-staff">Your name <span class="hint">(so we know who sent it)</span></label><input id="rf-staff" placeholder="e.g. Sam at the front desk" autocomplete="name"></div>
+      </div>
+      <div class="two">
+        <div class="field"><label for="rf-name">Customer name</label><input id="rf-name" required placeholder="First and last name"></div>
+        <div class="field"><label for="rf-phone">Customer phone</label><input id="rf-phone" type="tel" required placeholder="(303) 555-0100"></div>
+      </div>
+      <div class="three">
+        <div class="field"><label for="rf-car">Vehicle needed</label>
+          <select id="rf-car"><option>Any vehicle</option><option>Compact or sedan</option><option>SUV or crossover</option><option>Truck</option><option>Seats 7 or more</option></select></div>
+        <div class="field"><label for="rf-date">Needs it</label><input id="rf-date" type="date"></div>
+        <div class="field"><label for="rf-days">About how many days?</label><input id="rf-days" type="number" min="1" max="29" value="5"></div>
+      </div>
+      <div class="two">
+        <div class="field"><label for="rf-claim">Insurance claim number <span class="hint">(optional)</span></label><input id="rf-claim" placeholder="If their insurance is covering it"></div>
+        <div class="field"><span class="label" style="font-size:13px;font-weight:600">Who calls who?</span>
+          <div class="seg" role="radiogroup" aria-label="Who calls who"><label><input type="radio" name="rf-who" checked> We call them</label><label><input type="radio" name="rf-who"> They'll call us</label></div></div>
+      </div>
+      <div class="field"><label for="rf-notes">Notes <span class="hint">(optional)</span></label><textarea id="rf-notes" rows="2" placeholder="e.g. Needs a car seat-friendly SUV, ready after 2 pm"></textarea></div>
+      <button class="btn primary" type="submit">Send referral</button>
+      <div class="refer-done" id="rf-done" role="status" hidden></div>
+    </form>
+  </div>
+  <div class="note"><b>Change 7, "Refer a customer".</b> Today a shop has to hand the customer a link or QR code and hope they follow up. With this form the shop sends you the customer directly. Each referral would land in the staff <b>Requests</b> tab tagged "ABC Collision (Body shop)", and you'd call the customer. The shop's name is filled in from its link, so there's no login for partners. Big rental companies run shop referral programs like this (Hertz with points per rental, Enterprise with certified shops). In this draft, Send only shows a sample confirmation. Nothing is sent.</div>
+</div></section>
+
 <section id="visit" style="padding-top:0"><div class="wrap">
   <div class="visit">
     <div><h3>Visit</h3><p>2465 48th Ct, Boulder, CO 80301</p><p style="color:var(--muted)">Pick up at the service drive</p></div>
     <div><h3>Hours</h3><p>M–F 7 am to 6 pm</p><p>Saturday 8 am to 5 pm</p><p>Sunday closed</p></div>
     <div><h3>Call</h3><p>(720) 907-0926</p><p>Direct: (303) 996-1680</p><p style="color:var(--muted)">24-hr roadside: (800) 599-6766</p></div>
   </div>
-  <div class="note"><b>Also planned, not shown here:</b> a "Refer a customer" form on the shop and hotel pages, so a partner can send you a customer in 20 seconds. The big rental companies run referral programs like this for body shops. Plus a monthly email showing each partner how many people they sent.</div>
+  <div class="note"><b>Also planned, not shown here:</b> a monthly email to each partner showing how many customers they sent and how many rented.</div>
 </div></section>
 
 <footer><div class="wrap">Redesign draft for review · prices from the live site on Nov 19, 2026</div></footer>
@@ -279,6 +341,16 @@ footer { padding-block: 30px 90px; color: var(--muted); font-size: 13px; }
   ["q-car", "q-start", "q-end"].forEach(id => document.getElementById(id).addEventListener("input", update));
   document.getElementById("fleet-grid").addEventListener("click", e => { const b = e.target.closest("[data-car]"); if (b) { sel.value = b.dataset.car; update(); } });
   update();
+  const rf = document.getElementById("refer-form");
+  const rd = new Date(); document.getElementById("rf-date").value = new Date(Date.UTC(rd.getFullYear(), rd.getMonth(), rd.getDate())).toISOString().slice(0, 10);
+  rf.addEventListener("submit", e => {
+    e.preventDefault();
+    const name = document.getElementById("rf-name").value.trim(), phone = document.getElementById("rf-phone").value.trim();
+    const done = document.getElementById("rf-done"); done.hidden = false;
+    if (!name || !phone) { done.style.background = "var(--accent-soft)"; done.style.color = "var(--accent)"; done.textContent = "Add the customer's name and phone so we can reach them."; return; }
+    done.style.background = ""; done.style.color = "";
+    done.textContent = `Draft preview: ${name} would be sent to Corwin Toyota Boulder as a referral from ABC Collision. We'd call ${phone} today. Nothing was actually sent.`;
+  });
   const tog = document.getElementById("toggle-notes");
   tog.addEventListener("click", () => { const h = document.body.classList.toggle("hide-notes"); tog.textContent = h ? "Show notes" : "Hide notes"; });
 })();
