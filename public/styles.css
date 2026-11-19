@@ -365,3 +365,15 @@ table.plain th, table.plain td { text-align: left; padding: 8px; border-bottom: 
   .topbar .right { display: none; }
   .hero2 .chips { display: none; }
 }
+
+/* Who's renting? tiles (main page) */
+.who { margin-block: 36px 8px; }
+.who-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.who-tile { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; color: var(--ink); text-decoration: none; display: grid; gap: 6px; align-content: start; transition: border-color .15s, transform .15s; }
+.who-tile:hover { border-color: var(--accent); transform: translateY(-2px); }
+.who-ico { width: 40px; height: 40px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; }
+.who-tile b { font-family: var(--font-display); font-size: 18px; }
+.who-sub { font-size: 14px; color: var(--muted); }
+.who-from { font-weight: 700; color: var(--accent); font-size: 14px; margin-top: 2px; }
+@media (prefers-reduced-motion: reduce) { .who-tile { transition: none; } .who-tile:hover { transform: none; } }
+@media (max-width: 480px) { .who-grid { grid-template-columns: 1fr 1fr; } .who-sub { display: none; } }

@@ -43,6 +43,32 @@
     photoFor = it => d.rowPhotos === false ? "" : R.itemPhoto(it);
   }
 
+  /* "Who's renting?" tiles on the main page: one per partner category, with its starting price. */
+  const ICONS = {
+    shop: '<path d="M14 7l3-3 3 3-3 3M17 4v7M4 20l8-8"/>',
+    hotel: '<path d="M3 20h18M5 20V8l7-4 7 4v12M9 20v-5h6v5"/>',
+    travel: '<path d="M2 16l20-8-6 12-3-5-5-2"/>',
+    service: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',
+    other: '<circle cx="12" cy="12" r="8"/><path d="M8 12h8M12 8v8"/>',
+  };
+  const iconFor = c => /body|repair|collision|shop/i.test(c.slug + c.label) ? "shop" : /hotel|guest|stay/i.test(c.slug + c.label) ? "hotel" : /travel|agen|business/i.test(c.slug + c.label) ? "travel" : /service|loaner/i.test(c.slug + c.label) ? "service" : "other";
+  function renderWho(st) {
+    const cats = (site.partners || []).filter(c => c.slug && c.label);
+    if (!cats.length) { $("who").hidden = true; return; }
+    $("who-grid").innerHTML = cats.map(c => {
+      const items = R.allItems(R.pageView(site, c.slug)).map(x => R.rates(x.item, st).daily).filter(n => n > 0);
+      const from = items.length ? Math.min(...items) : 0;
+      const sub = R.categoryContent(c).sub || c.message || "";
+      return `<a class="who-tile" href="/${R.esc(c.slug)}">
+        <span class="who-ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[iconFor(c)]}</svg></span>
+        <b>${R.esc(c.label)}</b>
+        ${sub ? `<span class="who-sub">${R.esc(sub)}</span>` : ""}
+        ${from ? `<span class="who-from money">From ${R.fmt(from)}/day</span>` : ""}
+      </a>`;
+    }).join("");
+    $("who").hidden = false;
+  }
+
   function telHref(p) { return "tel:" + String(p).replace(/[^\d+]/g, ""); }
 
   function render() {
@@ -182,6 +208,7 @@
     }
     builder.setSite(view);
     setupQuickPrice(view, st);
+    if (!partner) renderWho(st);
   }
 
   /* The short price box in the banner. */
