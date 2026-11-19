@@ -813,6 +813,7 @@
 
   /* Design editor: changes a copy of the site and shows it in a live preview frame. */
   let dSite = null, dSlug = "", dUploads = [], dTimer = null, dDirty = false;
+  const dEdited = new Set(); // pages changed in the editor ("" = main page); only these are saved
   const clone = v => JSON.parse(JSON.stringify(v));
   function dTarget() {
     if (!dSlug) {
@@ -855,7 +856,7 @@
     try { sessionStorage.setItem("previewScroll", String(frame.contentWindow.scrollY || 0)); frame.contentWindow.location.reload(); }
     catch { frame.src = `/${dSlug}?preview=1`; }
   }
-  const edited = () => { dDirty = true; };
+  const edited = () => { dDirty = true; dEdited.add(dSlug); };
   const pushSoon = () => { clearTimeout(dTimer); dTimer = setTimeout(() => pushPreview(false), 300); };
   async function openDesign() {
     if (!dSite) {
@@ -865,6 +866,9 @@
         const saved = JSON.parse(localStorage.getItem("designDraft") || "null");
         if (saved && saved.version === site.version && JSON.stringify(saved.settings.design || null) + JSON.stringify((saved.partners || []).map(p => [p.design, p.content])) !== JSON.stringify(site.settings.design || null) + JSON.stringify((site.partners || []).map(p => [p.design, p.content]))) {
           dSite = saved; dDirty = true;
+          // Work out which pages the brought-back design changed.
+          const pageOf = (st, slug) => slug ? JSON.stringify((st.partners || []).filter(p => p.slug === slug).map(p => [p.design, p.content])) : JSON.stringify([st.settings.design || null, st.settings.heroPhoto || null]);
+          ["", ...(site.partners || []).map(p => p.slug)].forEach(sl => { if (pageOf(saved, sl) !== pageOf(site, sl)) dEdited.add(sl); });
           setTimeout(() => say($("d-msg"), "Your unsaved design was brought back. Click Save design to keep it."), 50);
         }
       } catch {}
@@ -901,12 +905,21 @@
     catch (err) { say($("d-msg"), err.message); }
     e.target.value = "";
   });
-  $("d-undo").addEventListener("click", () => { dSite = clone(site); dDirty = false; drawDesign(); pushPreview(false); });
+  $("d-undo").addEventListener("click", () => { dSite = clone(site); dDirty = false; dEdited.clear(); drawDesign(); pushPreview(false); });
   $("d-save").addEventListener("click", async () => {
     $("d-save").disabled = true; $("d-msg").className = ""; $("d-msg").textContent = "Saving…";
     try {
-      await saveSite(Object.assign({}, site, { settings: dSite.settings, partners: dSite.partners }));
-      dSite = clone(site); dDirty = false; drawDesign(); pushPreview(false);
+      // Save only the pages changed here, on top of the newest version of the site, so nothing
+      // anyone else saved in the meantime (prices, other pages) is overwritten.
+      const latest = await api("/api/site");
+      const next = clone(latest);
+      for (const sl of dEdited) {
+        if (!sl) { next.settings.design = clone(dSite.settings.design); next.settings.heroPhoto = dSite.settings.heroPhoto; continue; }
+        const from = (dSite.partners || []).find(p => p.slug === sl), to = (next.partners || []).find(p => p.slug === sl);
+        if (from && to) { to.design = clone(from.design); to.content = clone(from.content); }
+      }
+      await saveSite(next);
+      dSite = clone(site); dDirty = false; dEdited.clear(); drawDesign(); pushPreview(false);
       say($("d-msg"), "Saved. Visitors see the new design now.", true);
       renderPartners(); renderPriceEditor();
     } catch (err) { say($("d-msg"), err.message); }

@@ -106,7 +106,7 @@ if (site && site.settings && site.settings.directPhone === undefined && String(s
     p.design = { photoSide: "right", bg: looks[p.slug], bgFade: 86, accent: "", rowPhotos: false, badge: "", headline: "", sub: "" };
     changed = true;
   }
-  if (changed) { fs.writeFileSync(FILES.site, JSON.stringify(site, null, 2)); console.log("Repair shop, hotel and travel agency pages now match the body shop page design."); }
+  if (changed) { site.version = (site.version || 0) + 1; fs.writeFileSync(FILES.site, JSON.stringify(site, null, 2)); console.log("Repair shop, hotel and travel agency pages now match the body shop page design."); }
 }
 // One time: the main and Service pages match the partner pages (faded photo background, no
 // price-list photos). Only applied if those designs are still exactly as saved on Nov 19.
@@ -127,6 +127,28 @@ if (site && site.settings && site.settings.directPhone === undefined && String(s
     site.version = (site.version || 0) + 1; // an open staff page must reload before saving over this
     fs.writeFileSync(FILES.site, JSON.stringify(site, null, 2));
     console.log("Main and Service pages now match the partner page design.");
+  }
+}
+// One time: put back the page backgrounds that a stale design-editor save removed on Nov 19
+// (keeps that save's own changes: main page without price-list photos, Service headline and red).
+// The repair shop, hotel and travel pages are restored by the block further up (they have no design).
+{
+  let changed = false;
+  const d = site && site.settings && site.settings.design;
+  if (d && d.bg === "" && d.bgFade === 80 && d.accent === "#c8102e" && d.rowPhotos === false && !d.headline) {
+    Object.assign(d, { bg: site.settings.heroPhoto || "/img/hero-4runner.jpg", bgFade: 86 });
+    changed = true;
+  }
+  const svc = ((site && site.partners) || []).find(p => p.slug === "service");
+  if (svc && svc.design && svc.design.bg === "" && svc.content && svc.content.photo === "" && svc.content.headline === "Service Rental") {
+    svc.content.photo = "/img/shops.jpg";
+    svc.design.bg = "/img/shops.jpg";
+    changed = true;
+  }
+  if (changed) {
+    site.version = (site.version || 0) + 1;
+    fs.writeFileSync(FILES.site, JSON.stringify(site, null, 2));
+    console.log("Page backgrounds restored on the main and Service pages.");
   }
 }
 // One time: the old starting fine print said taxes were extra; estimates now include them.
