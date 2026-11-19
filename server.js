@@ -96,6 +96,18 @@ if (site && site.settings && site.settings.directPhone === undefined && String(s
   }
   if (changed) { fs.writeFileSync(FILES.site, JSON.stringify(site, null, 2)); console.log("Body shop and repair shop rate updated to $34.99 a day."); }
 }
+// One time: give the partner pages that haven't been designed yet the same look as the body shop
+// page (their own flyer photo as a faded page background, standard color, no price-list photos).
+{
+  const looks = { "repair-shop": "/img/shops.jpg", "hotels": "/img/hotels.jpg", "travel-agents": "/img/travel-agents.jpg" };
+  let changed = false;
+  for (const p of (site && site.partners) || []) {
+    if (!looks[p.slug] || p.design) continue;
+    p.design = { photoSide: "right", bg: looks[p.slug], bgFade: 86, accent: "", rowPhotos: false, badge: "", headline: "", sub: "" };
+    changed = true;
+  }
+  if (changed) { fs.writeFileSync(FILES.site, JSON.stringify(site, null, 2)); console.log("Repair shop, hotel and travel agency pages now match the body shop page design."); }
+}
 // One time: the old starting fine print said taxes were extra; estimates now include them.
 if (site && site.settings && site.settings.terms === "Taxes and applicable fees are extra. The final quote depends on the vehicle and rental dates.") {
   site.settings.terms = "Estimates include taxes and fees. The final amount depends on the vehicle, rental dates and any extra charges.";
