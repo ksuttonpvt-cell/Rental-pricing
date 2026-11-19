@@ -108,6 +108,27 @@ if (site && site.settings && site.settings.directPhone === undefined && String(s
   }
   if (changed) { fs.writeFileSync(FILES.site, JSON.stringify(site, null, 2)); console.log("Repair shop, hotel and travel agency pages now match the body shop page design."); }
 }
+// One time: the main and Service pages match the partner pages (faded photo background, no
+// price-list photos). Only applied if those designs are still exactly as saved on Nov 19.
+{
+  let changed = false;
+  const d = site && site.settings && site.settings.design;
+  if (d && d.bg === "" && d.bgFade === 80 && d.accent === "#c8102e" && d.rowPhotos === true && d.photoSide === "right" && !d.headline && !d.sub && !d.badge) {
+    Object.assign(d, { bg: site.settings.heroPhoto || "/img/hero-4runner.jpg", bgFade: 86, rowPhotos: false });
+    changed = true;
+  }
+  const svc = ((site && site.partners) || []).find(p => p.slug === "service");
+  if (svc && svc.design && svc.design.bg === "" && svc.design.rowPhotos === true && svc.design.accent === "" && svc.content && svc.content.photo === "") {
+    svc.content.photo = "/img/shops.jpg";
+    Object.assign(svc.design, { bg: "/img/shops.jpg", bgFade: 86, rowPhotos: false });
+    changed = true;
+  }
+  if (changed) {
+    site.version = (site.version || 0) + 1; // an open staff page must reload before saving over this
+    fs.writeFileSync(FILES.site, JSON.stringify(site, null, 2));
+    console.log("Main and Service pages now match the partner page design.");
+  }
+}
 // One time: the old starting fine print said taxes were extra; estimates now include them.
 if (site && site.settings && site.settings.terms === "Taxes and applicable fees are extra. The final quote depends on the vehicle and rental dates.") {
   site.settings.terms = "Estimates include taxes and fees. The final amount depends on the vehicle, rental dates and any extra charges.";
