@@ -191,6 +191,10 @@
           <div class="field"><label for="${P}-iw-${si}-${ii}">7-day $ <span class="hint">blank = auto</span></label><input id="${P}-iw-${si}-${ii}" type="number" min="0" step="0.01" data-sec="${si}" data-item="${ii}" data-k="weekly" value="${R.esc(it.weekly ?? "")}" ${it.noWeekly ? "disabled" : ""}></div>
           <button class="btn small danger" type="button" data-del-item="${si}-${ii}">Remove</button>
           <div class="opt actions">
+            <span class="ed-photo">${R.itemPhoto(it) ? `<img src="${R.esc(R.itemPhoto(it))}" alt="">` : `<span class="muted">No photo</span>`}</span>
+            <label class="btn small" style="cursor:pointer">Change photo<input type="file" accept="image/png,image/jpeg,image/webp" data-photo-for="${si}-${ii}" hidden></label>
+            ${R.itemPhoto(it) ? `<button class="btn small ghost" type="button" data-photo-clear="${si}-${ii}">No photo</button>` : ""}
+            ${it.photo !== undefined ? `<button class="btn small ghost" type="button" data-photo-default="${si}-${ii}">Use standard photo</button>` : ""}
             <label class="check" style="margin:0"><input type="checkbox" data-sec="${si}" data-item="${ii}" data-k="noWeekly" ${it.noWeekly ? "checked" : ""}> Daily price only (no weekly discount)</label>
             ${sec.kind === "special" ? `<div class="field" style="margin:0;min-width:160px"><label for="${P}-it-${si}-${ii}">Badge</label><input id="${P}-it-${si}-${ii}" data-sec="${si}" data-item="${ii}" data-k="tag" value="${R.esc(it.tag || "")}" placeholder="Special"></div>` : ""}
           </div>
@@ -219,8 +223,18 @@
     }
     mount.addEventListener("input", e => { if (e.target.dataset.sec !== undefined && e.target.type !== "checkbox" && e.target.tagName !== "SELECT") change(e.target); });
     mount.addEventListener("change", e => { if (e.target.dataset.sec !== undefined && (e.target.type === "checkbox" || e.target.tagName === "SELECT")) change(e.target); });
+    mount.addEventListener("change", async e => {
+      const f = e.target.dataset.photoFor && e.target.files[0]; if (!f) return;
+      const [si, ii] = e.target.dataset.photoFor.split("-").map(Number);
+      if (!/^image\/(png|jpeg|webp)$/.test(f.type) || f.size > 1_500_000) { alertInline("Pick a PNG, JPG or WebP photo under 1.5 MB."); return; }
+      const dataUrl = await new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = bad; r.readAsDataURL(f); });
+      try { const { file } = await api("/api/logos", { method: "POST", body: { dataUrl } }); draft[si].items[ii].photo = file; draw(); }
+      catch (err) { alertInline(err.message); }
+    });
     mount.addEventListener("click", async e => {
       const b = e.target.closest("button"); if (!b || !mount.contains(b)) return;
+      if (b.dataset.photoClear) { const [si, ii] = b.dataset.photoClear.split("-").map(Number); draft[si].items[ii].photo = ""; return draw(); }
+      if (b.dataset.photoDefault) { const [si, ii] = b.dataset.photoDefault.split("-").map(Number); delete draft[si].items[ii].photo; return draw(); }
       const blank = kind => ({ id: uid(), name: "", detail: "", daily: 0, weekly: "", noWeekly: false, tag: kind === "special" ? "Special" : "" });
       if (b.dataset.addItem !== undefined) { const s = draft[+b.dataset.addItem]; s.items.push(blank(s.kind)); draw(); }
       else if (b.dataset.delItem) { const [si, ii] = b.dataset.delItem.split("-").map(Number); draft[si].items.splice(ii, 1); draw(); }
@@ -257,9 +271,22 @@
   function renderPriceEditor() { mainEditor.reset(); }
 
   /* Business info */
+  function showHero() {
+    const u = R.photoUrl($("b-heroPhoto").value);
+    $("b-heroPhoto-img").hidden = !u; if (u) $("b-heroPhoto-img").src = u;
+  }
+  $("b-heroPhoto-clear").addEventListener("click", () => { $("b-heroPhoto").value = ""; showHero(); });
+  $("b-heroPhoto-file").addEventListener("change", async e => {
+    const f = e.target.files[0]; if (!f) return;
+    if (!/^image\/(png|jpeg|webp)$/.test(f.type) || f.size > 1_500_000) return say($("biz-out"), "Pick a PNG, JPG or WebP photo under 1.5 MB.");
+    const dataUrl = await new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = bad; r.readAsDataURL(f); });
+    try { const { file } = await api("/api/logos", { method: "POST", body: { dataUrl } }); $("b-heroPhoto").value = file; showHero(); say($("biz-out"), "Photo added. Click Save business info to keep it.", true); }
+    catch (err) { say($("biz-out"), err.message); }
+  });
   function fillBiz() {
     const st = R.settingsOf(site);
     document.querySelectorAll("#biz-form [data-s]").forEach(el => el.value = st[el.dataset.s] ?? "");
+    showHero();
   }
   $("biz-form").addEventListener("submit", async e => {
     e.preventDefault();

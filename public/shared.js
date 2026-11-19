@@ -31,7 +31,8 @@
       shuttleUrl: "https://corwinshuttleservice.com/request", shuttleMiles: 15,
       // Taxes and fees, worked out like page 1 of the rental agreement.
       dailyRentalFee: 5.57, taxRate: 9.195, servicesFeeRate: 3.95,
-      rentalTerms: DEFAULT_TERMS
+      rentalTerms: DEFAULT_TERMS,
+      heroPhoto: "/img/hero-4runner.jpg"
     }, (site && site.settings) || {});
   }
 
@@ -155,6 +156,17 @@
   }
   // Photo setting -> address: "" none, "/img/..." built-in, otherwise an uploaded file.
   const photoUrl = v => !v ? "" : v.startsWith("/img/") ? v : `/logos/${v}`;
+  /* Photos of the real fleet for each vehicle group. A price with its own photo setting uses that
+     ("" = no photo); otherwise the group name picks one. */
+  function itemPhoto(item) {
+    if (item.photo !== undefined && item.photo !== null) return photoUrl(item.photo);
+    const n = String(item.name || "");
+    if (/crossover|compact suv/i.test(n)) return "/img/corolla-cross.jpg";
+    if (/compact|sedan/i.test(n)) return "/img/corolla.jpg";
+    if (/adventure/i.test(n)) return "/img/4runner.jpg";
+    if (/truck/i.test(n)) return "/img/tundra.jpg";
+    return "";
+  }
   function pageContent(site, slug) {
     const p = partnerOf(site, slug);
     if (!p) return null;
@@ -270,7 +282,7 @@
     return L.join("\n");
   }
 
-  const api = { round2, fmt, plural, lenName, esc, settingsOf, rates, priceFor, allItems, findItem, partnerOf, sourceLabel, pageContent, categoryContent, photoUrl, PAGE_CONTENT, pageSections, allSections, pageView, staffView,parseDate, isoDate, niceDate, daysBetween, cleanDays, COMPARE, optionLabel, howItWorks, buildEmail, hoursLines, termLines, totalNote, hasFees, feesFor, MAX_DAYS };
+  const api = { round2, fmt, plural, lenName, esc, settingsOf, rates, priceFor, allItems, findItem, partnerOf, sourceLabel, pageContent, categoryContent, photoUrl, itemPhoto, PAGE_CONTENT, pageSections, allSections, pageView, staffView,parseDate, isoDate, niceDate, daysBetween, cleanDays, COMPARE, optionLabel, howItWorks, buildEmail, hoursLines, termLines, totalNote, hasFees, feesFor, MAX_DAYS };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Rates = api;
 })(typeof window !== "undefined" ? window : globalThis);

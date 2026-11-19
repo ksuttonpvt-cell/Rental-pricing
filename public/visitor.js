@@ -48,6 +48,9 @@
       </section>`;
       return;
     }
+    if (!content && R.photoUrl(st.heroPhoto)) {
+      $("hero-photo").src = R.photoUrl(st.heroPhoto); $("hero-photo").alt = "A rental 4Runner at the dealership"; $("hero-photo").hidden = false; $("hero").classList.add("hero-split");
+    }
     if (content) {
       $("hero-lede").textContent = content.sub || "Rental prices, plus an estimate tool for any vehicle and any length of rental.";
       const photo = R.photoUrl(content.photo);
@@ -80,6 +83,7 @@
         body = `<div class="card-grid">${items.map(it => {
           const r = R.rates(it, st);
           return `<article class="special">
+            ${R.itemPhoto(it) ? `<img class="card-photo" src="${R.esc(R.itemPhoto(it))}" alt="${R.esc(it.name)}" loading="lazy">` : ""}
             <span class="tag">${R.esc(it.tag || "Special")}</span>
             <h3>${R.esc(it.name)}</h3>
             ${it.detail ? `<p>${R.esc(it.detail)}</p>` : ""}
@@ -94,7 +98,7 @@
           ${items.map(it => {
             const r = R.rates(it, st);
             return `<li class="row">
-              <div class="name"><h3>${R.esc(it.name)}</h3>${it.detail ? `<p class="detail">${R.esc(it.detail)}</p>` : ""}</div>
+              <div class="name">${R.itemPhoto(it) ? `<img class="row-photo" src="${R.esc(R.itemPhoto(it))}" alt="${R.esc(it.name)}" loading="lazy">` : ""}<div><h3>${R.esc(it.name)}</h3>${it.detail ? `<p class="detail">${R.esc(it.detail)}</p>` : ""}</div></div>
               <div class="cell"><span class="lbl">Daily</span><span class="amt money">${R.fmt(r.daily)}</span></div>
               <div class="cell week"><span class="lbl">7 days</span>${r.week === null ? `<span class="unit">Daily only</span>` : `<span class="amt money">${R.fmt(r.week)}</span><span class="save money">Save ${R.fmt(r.daily * 7 - r.week)}</span>`}</div>
               <button class="btn small" data-quote="${R.esc(it.id)}">Price this</button>

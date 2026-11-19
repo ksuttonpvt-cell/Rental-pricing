@@ -234,6 +234,8 @@ const rate = v => { const n = Number(v); return Number.isFinite(n) ? Math.min(50
 const id = v => String(v ?? "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40) || crypto.randomBytes(5).toString("hex");
 
 /* Keep only known fields so the stored file stays clean. */
+// A photo setting: a built-in /img/ photo, an uploaded file, or "" for none.
+const photoOf = v => { v = String(v || ""); return /^\/img\/[a-z0-9-]+\.jpg$/.test(v) || LOGO_NAME.test(v) ? v : ""; };
 // Partner page wording and photo (see PAGE_CONTENT in public/shared.js).
 function cleanContent(c) {
   const list = v => (Array.isArray(v) ? v : String(v || "").split("\n")).map(x => str(x, 200)).filter(Boolean).slice(0, 12);
@@ -259,7 +261,7 @@ function cleanSite(input, version) {
     startUrl: /^https:\/\//.test(str(s.startUrl, 500)) ? str(s.startUrl, 500) : "", startLabel: str(s.startLabel, 40),
     shuttleUrl: /^https:\/\//.test(str(s.shuttleUrl, 500)) ? str(s.shuttleUrl, 500) : "", shuttleMiles: num(s.shuttleMiles, 0, 500),
     dailyRentalFee: num(s.dailyRentalFee, 0, 1000), taxRate: rate(s.taxRate), servicesFeeRate: rate(s.servicesFeeRate),
-    rentalTerms: str(s.rentalTerms, 3000),
+    rentalTerms: str(s.rentalTerms, 3000), heroPhoto: photoOf(s.heroPhoto),
     visitorSiteOn: s.visitorSiteOn !== false, requestsOn: s.requestsOn !== false, shuttleOn: s.shuttleOn !== false,
     offlineMessage: str(s.offlineMessage, 300),
   };
@@ -273,6 +275,7 @@ function cleanSite(input, version) {
       daily: num(it.daily, 0, 100000),
       weekly: it.weekly === "" || it.weekly == null ? "" : num(it.weekly, 0, 1000000),
       noWeekly: !!it.noWeekly, tag: str(it.tag, 40),
+      ...(it.photo === undefined || it.photo === null ? {} : { photo: photoOf(it.photo) }),
     })).filter(it => it.name),
   }));
   const sections = cleanSections(input.sections);
