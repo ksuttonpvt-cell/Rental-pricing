@@ -150,18 +150,25 @@
           </article>`;
         }).join("")}</div>`;
       } else {
-        body = `<ul class="rows">
-          <li class="row cols" aria-hidden="true"><span>Vehicle</span><span>Daily</span><span>7 days</span><span></span></li>
-          ${items.map(it => {
+        // Vehicle cards: name, models, daily and 7-day price, and a 3-day total with fees.
+        body = `<div class="fleet">${items.map(it => {
             const r = R.rates(it, st);
-            return `<li class="row">
-              <div class="name">${photoFor(it) ? `<img class="row-photo" src="${R.esc(photoFor(it))}" alt="${R.esc(it.name)}" loading="lazy">` : ""}<div><h3>${R.esc(it.name)}</h3>${it.detail ? `<p class="detail">${R.esc(it.detail)}</p>` : ""}</div></div>
-              <div class="cell"><span class="lbl">Daily</span><span class="amt money">${R.fmt(r.daily)}</span></div>
-              <div class="cell week"><span class="lbl">7 days</span>${r.week === null ? `<span class="unit">Daily only</span>` : `<span class="amt money">${R.fmt(r.week)}</span><span class="save money">Save ${R.fmt(r.daily * 7 - r.week)}</span>`}</div>
-              <button class="btn small" data-quote="${R.esc(it.id)}">Price this</button>
-            </li>`;
-          }).join("")}
-        </ul>`;
+            const three = R.priceFor(it, 3, st).total;
+            const photo = photoFor(it);
+            return `<article class="vcard${photo ? "" : " no-photo"}">
+              ${photo ? `<img class="vcard-photo" src="${R.esc(photo)}" alt="${R.esc(it.name)}" loading="lazy">` : ""}
+              <div class="vcard-body">
+                <h3>${R.esc(it.name)}</h3>
+                ${it.detail ? `<p class="vcard-models">${R.esc(it.detail)}</p>` : ""}
+                <div class="vcard-prices">
+                  <div><span class="vcard-day money">${R.fmt(r.daily)}</span><span class="unit">/day</span></div>
+                  <div class="vcard-week">${r.week === null ? `<span class="unit">Daily rate only</span>` : `<span class="unit">7 days:</span><b class="money">${R.fmt(r.week)}</b>`}</div>
+                </div>
+                <p class="vcard-est money">3 days: <b>${R.fmt(three)}</b> ${R.hasFees(st) ? "with taxes and fees" : ""}</p>
+              </div>
+              <button class="btn" data-quote="${R.esc(it.id)}">Price this</button>
+            </article>`;
+          }).join("")}</div>`;
       }
       const heading = content && content.pricingTitle && sec === sections.find(x => (x.items || []).length) ? content.pricingTitle : sec.title;
       el.innerHTML = `<div class="section-head"><h2>${R.esc(heading)}</h2>${sec.note ? `<p>${R.esc(sec.note)}</p>` : ""}</div>${body}`;

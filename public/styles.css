@@ -377,3 +377,20 @@ table.plain th, table.plain td { text-align: left; padding: 8px; border-bottom: 
 .who-from { font-weight: 700; color: var(--accent); font-size: 14px; margin-top: 2px; }
 @media (prefers-reduced-motion: reduce) { .who-tile { transition: none; } .who-tile:hover { transform: none; } }
 @media (max-width: 480px) { .who-grid { grid-template-columns: 1fr 1fr; } .who-sub { display: none; } }
+
+/* Vehicle cards (instead of the price table) */
+.fleet { display: grid; grid-template-columns: repeat(auto-fit, minmax(178px, 1fr)); gap: 12px; }
+.vcard { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
+.vcard-photo { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; display: block; }
+.vcard-body { padding: 16px 16px 10px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.vcard h3 { font-size: 18px; font-weight: 800; font-stretch: 90%; }
+.vcard-models { margin: 0; color: var(--muted); font-size: 14px; }
+.vcard-prices { display: grid; gap: 2px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line); }
+.vcard-day { font-family: var(--font-display); font-size: 26px; font-weight: 900; }
+.vcard-week { display: flex; align-items: baseline; gap: 6px; }
+.vcard-week b { font-family: var(--font-display); font-size: 17px; color: var(--accent); }
+.vcard-est { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+.vcard-est b { color: var(--ink); }
+.vcard > .btn { margin: 0 16px 16px; }
+.vcard.no-photo { border-top: 4px solid var(--accent); }
+@media (max-width: 480px) { .fleet { grid-template-columns: 1fr; } }
