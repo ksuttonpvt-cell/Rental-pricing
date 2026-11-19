@@ -208,9 +208,9 @@ setInterval(() => {
 /* ---------- helpers ---------- */
 const SECURITY_HEADERS = {
   "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "DENY",
+  "X-Frame-Options": "SAMEORIGIN", // the staff design editor shows the page in a preview frame
   "Referrer-Policy": "same-origin",
-  "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+  "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; base-uri 'none'; form-action 'self'",
 };
 function send(res, status, body, headers = {}) {
   res.writeHead(status, { ...SECURITY_HEADERS, ...headers });
@@ -236,6 +236,18 @@ const id = v => String(v ?? "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40) || c
 /* Keep only known fields so the stored file stays clean. */
 // A photo setting: a built-in /img/ photo, an uploaded file, or "" for none.
 const photoOf = v => { v = String(v || ""); return /^\/img\/[a-z0-9-]+\.jpg$/.test(v) || LOGO_NAME.test(v) ? v : ""; };
+// Page look from the design editor (see DEFAULT_DESIGN in public/shared.js).
+function cleanDesign(d) {
+  if (!d || typeof d !== "object") return undefined;
+  const fade = Math.round(Number(d.bgFade));
+  return {
+    photoSide: d.photoSide === "left" ? "left" : "right", bg: photoOf(d.bg),
+    bgFade: Number.isFinite(fade) ? Math.min(100, Math.max(0, fade)) : 86,
+    accent: /^#[0-9a-f]{6}$/i.test(String(d.accent || "")) ? String(d.accent).toLowerCase() : "",
+    rowPhotos: d.rowPhotos !== false,
+    badge: str(d.badge, 60), headline: str(d.headline, 120), sub: str(d.sub, 200),
+  };
+}
 // Partner page wording and photo (see PAGE_CONTENT in public/shared.js).
 function cleanContent(c) {
   const list = v => (Array.isArray(v) ? v : String(v || "").split("\n")).map(x => str(x, 200)).filter(Boolean).slice(0, 12);
@@ -262,6 +274,7 @@ function cleanSite(input, version) {
     shuttleUrl: /^https:\/\//.test(str(s.shuttleUrl, 500)) ? str(s.shuttleUrl, 500) : "", shuttleMiles: num(s.shuttleMiles, 0, 500),
     dailyRentalFee: num(s.dailyRentalFee, 0, 1000), taxRate: rate(s.taxRate), servicesFeeRate: rate(s.servicesFeeRate),
     rentalTerms: str(s.rentalTerms, 3000), heroPhoto: photoOf(s.heroPhoto),
+    ...(s.design ? { design: cleanDesign(s.design) } : {}),
     visitorSiteOn: s.visitorSiteOn !== false, requestsOn: s.requestsOn !== false, shuttleOn: s.shuttleOn !== false,
     offlineMessage: str(s.offlineMessage, 300),
   };
@@ -291,6 +304,7 @@ function cleanSite(input, version) {
     alsoMainSpecials: !!p.alsoMainSpecials, alsoRegular: !!p.alsoRegular,
     sections: cleanSections(p.sections), _locations: Array.isArray(p.locations) ? p.locations : [],
     content: p.content ? cleanContent(p.content) : undefined,
+    design: cleanDesign(p.design),
   })).filter(p => p.label && free(p.slug));
   const partners = cats.map(({ _locations, ...p }) => Object.assign(p, {
     locations: _locations.slice(0, 200).map(l => ({
@@ -464,6 +478,12 @@ async function handle(req, res) {
       return json(res, 200, { ok: true });
     }
     /* ----- Server tab (admins only) ----- */
+    if (p === "/api/logos" && m === "GET") {
+      if (needUser()) return;
+      let files = [];
+      try { files = fs.readdirSync(LOGO_DIR).filter(f => LOGO_NAME.test(f)).map(f => ({ file: f, at: fs.statSync(path.join(LOGO_DIR, f)).mtimeMs })).sort((a, b) => b.at - a.at); } catch {}
+      return json(res, 200, { files: files.map(f => f.file) });
+    }
     if (p === "/api/logos" && m === "POST") {
       if (needUser()) return;
       const b = await readBody(req, 2_200_000);

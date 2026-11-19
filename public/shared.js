@@ -156,6 +156,42 @@
   }
   // Photo setting -> address: "" none, "/img/..." built-in, otherwise an uploaded file.
   const photoUrl = v => !v ? "" : v.startsWith("/img/") ? v : `/logos/${v}`;
+  /* Built-in photos the design editor offers. Uploaded photos are added to these on the staff side. */
+  const PHOTO_LIBRARY = [
+    { id: "/img/hero-4runner.jpg", label: "Blue 4Runner" },
+    { id: "/img/4runner.jpg", label: "Green 4Runner" },
+    { id: "/img/tundra.jpg", label: "Tundra" },
+    { id: "/img/corolla-cross.jpg", label: "Corolla Cross" },
+    { id: "/img/corolla.jpg", label: "Corolla" },
+    { id: "/img/4runner-rear.jpg", label: "Green 4Runner, rear" },
+    { id: "/img/4runner-blue-rear.jpg", label: "Blue 4Runner, rear" },
+    { id: "/img/tundra-rear.jpg", label: "Tundra, rear" },
+    { id: "/img/cross-rear.jpg", label: "Corolla Cross, rear" },
+    { id: "/img/flatirons.jpg", label: "Flatirons, Boulder" },
+    { id: "/img/aspens.jpg", label: "Colorado aspens" },
+    { id: "/img/shops.jpg", label: "Flyer: Corolla" },
+    { id: "/img/hotels.jpg", label: "Flyer: 4Runner" },
+    { id: "/img/travel-agents.jpg", label: "Flyer: Corolla Cross" },
+  ];
+  /* How a page looks. The main page keeps it in settings.design, a category in category.design;
+     locations use their category's. The top photo is settings.heroPhoto / category.content.photo. */
+  const DEFAULT_DESIGN = { photoSide: "right", bg: "", bgFade: 86, accent: "", rowPhotos: true, badge: "", headline: "", sub: "" };
+  const ACCENTS = [
+    { id: "", label: "Teal (standard)", color: "#0e6b74" },
+    { id: "#c8102e", label: "Toyota red", color: "#c8102e" },
+    { id: "#13294b", label: "Navy", color: "#13294b" },
+    { id: "#2f6b3a", label: "Forest green", color: "#2f6b3a" },
+    { id: "#b5651d", label: "Canyon orange", color: "#b5651d" },
+  ];
+  function designOf(site, slug) {
+    const p = partnerOf(site, slug);
+    const cat = p ? (p.kind === "location" ? p.category : p) : null;
+    const saved = cat ? cat.design : (site && site.settings && site.settings.design);
+    const d = Object.assign({}, DEFAULT_DESIGN, saved || {});
+    d.photo = cat ? categoryContent(cat).photo : settingsOf(site).heroPhoto;
+    return d;
+  }
+
   /* Photos of the real fleet for each vehicle group. A price with its own photo setting uses that
      ("" = no photo); otherwise the group name picks one. */
   function itemPhoto(item) {
@@ -282,7 +318,7 @@
     return L.join("\n");
   }
 
-  const api = { round2, fmt, plural, lenName, esc, settingsOf, rates, priceFor, allItems, findItem, partnerOf, sourceLabel, pageContent, categoryContent, photoUrl, itemPhoto, PAGE_CONTENT, pageSections, allSections, pageView, staffView,parseDate, isoDate, niceDate, daysBetween, cleanDays, COMPARE, optionLabel, howItWorks, buildEmail, hoursLines, termLines, totalNote, hasFees, feesFor, MAX_DAYS };
+  const api = { round2, fmt, plural, lenName, esc, settingsOf, rates, priceFor, allItems, findItem, partnerOf, sourceLabel, pageContent, categoryContent, photoUrl, itemPhoto, PHOTO_LIBRARY, DEFAULT_DESIGN, ACCENTS, designOf, PAGE_CONTENT, pageSections, allSections, pageView, staffView,parseDate, isoDate, niceDate, daysBetween, cleanDays, COMPARE, optionLabel, howItWorks, buildEmail, hoursLines, termLines, totalNote, hasFees, feesFor, MAX_DAYS };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Rates = api;
 })(typeof window !== "undefined" ? window : globalThis);

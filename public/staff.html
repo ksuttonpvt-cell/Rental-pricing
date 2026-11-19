@@ -39,6 +39,7 @@
     <button role="tab" data-tab="quotes" aria-selected="true">Quotes</button>
     <button role="tab" data-tab="requests" aria-selected="false">Requests <span class="badge" id="req-badge" hidden></span></button>
     <button role="tab" data-tab="prices" aria-selected="false">Prices</button>
+    <button role="tab" data-tab="design" aria-selected="false">Design</button>
     <button role="tab" data-tab="business" aria-selected="false">Business info</button>
     <button role="tab" data-tab="links" aria-selected="false">Partner pages</button>
     <button role="tab" data-tab="accounts" aria-selected="false">Accounts</button>
@@ -95,6 +96,53 @@
     <div class="editor" id="price-editor"></div>
   </section>
 
+  <!-- Design -->
+  <section data-panel="design" class="design-wrap" hidden>
+    <div class="panel design-controls">
+      <h2>Design</h2>
+      <p class="intro">Pick a page, then change its photos, background and colors. The preview updates as you go. Nothing changes for visitors until you save.</p>
+      <div class="field"><label for="d-page">Page</label><select id="d-page"></select></div>
+      <p class="muted ed-note" id="d-page-note"></p>
+
+      <h4 class="ed-h">Wording at the top</h4>
+      <div class="field"><label for="d-badge">Small label</label><input id="d-badge" maxlength="60"></div>
+      <div class="field"><label for="d-headline">Headline</label><input id="d-headline" maxlength="120"></div>
+      <div class="field"><label for="d-sub">Line under the headline</label><input id="d-sub" maxlength="200"></div>
+
+      <h4 class="ed-h">Photo next to the headline</h4>
+      <div class="photo-pick" id="d-photo" role="group" aria-label="Photo next to the headline"></div>
+      <div class="seg" role="group" aria-label="Photo side" id="d-side" style="margin-top:8px">
+        <button type="button" data-side="left" aria-pressed="false">Photo on left</button>
+        <button type="button" data-side="right" aria-pressed="true">Photo on right</button>
+      </div>
+
+      <h4 class="ed-h">Page background</h4>
+      <div class="photo-pick" id="d-bg" role="group" aria-label="Page background photo"></div>
+      <div class="field" style="margin-top:8px"><label for="d-fade">Fade: <span id="d-fade-val"></span> <span class="hint">(higher = softer photo, easier reading)</span></label><input id="d-fade" type="range" min="40" max="97" step="1"></div>
+
+      <h4 class="ed-h">Accent color</h4>
+      <div class="swatches" id="d-accent" role="group" aria-label="Accent color"></div>
+
+      <label class="check" style="margin-top:12px"><input type="checkbox" id="d-rowphotos"> Show vehicle photos on the price list</label>
+
+      <div class="photo-upload"><label class="btn small" style="cursor:pointer">Upload a photo<input type="file" id="d-upload" accept="image/png,image/jpeg,image/webp" hidden></label> <span class="hint">PNG, JPG or WebP, up to 1.5 MB. It's added to the photos above.</span></div>
+
+      <div class="sticky-save">
+        <span id="d-msg" role="status"></span>
+        <button class="btn ghost" type="button" id="d-undo">Undo changes</button>
+        <a class="btn ghost" id="d-open" target="_blank" rel="noopener">Open page</a>
+        <button class="btn primary" type="button" id="d-save">Save design</button>
+      </div>
+    </div>
+    <div class="design-preview">
+      <div class="seg" role="group" aria-label="Preview size" id="d-size">
+        <button type="button" data-size="desktop" aria-pressed="true">Computer</button>
+        <button type="button" data-size="phone" aria-pressed="false">Phone</button>
+      </div>
+      <div class="frame-wrap" id="d-frame-wrap"><iframe id="d-frame" title="Live preview of the page"></iframe></div>
+    </div>
+  </section>
+
   <!-- Business -->
   <section data-panel="business" class="panel" hidden>
     <h2>Business info</h2>
@@ -109,9 +157,6 @@
         <div class="field"><label for="b-startUrl">"Start your rental" link <span class="hint">(your rental software's form; blank hides the button)</span></label><input id="b-startUrl" data-s="startUrl" type="url" maxlength="500" placeholder="https://"></div>
         <div class="field"><label for="b-shuttleUrl">Shuttle ride link <span class="hint">(blank hides it)</span></label><input id="b-shuttleUrl" data-s="shuttleUrl" type="url" maxlength="500" placeholder="https://"></div>
         <div class="field"><label for="b-shuttleMiles">Shuttle distance limit (miles)</label><input id="b-shuttleMiles" data-s="shuttleMiles" type="number" min="0" step="1"></div>
-        <div class="field"><label for="b-heroPhoto-file">Main page photo <span class="hint">(PNG, JPG or WebP, up to 1.5 MB)</span></label>
-          <div class="actions"><img id="b-heroPhoto-img" alt="" style="width:96px;height:60px;object-fit:cover;border-radius:6px" hidden><input id="b-heroPhoto-file" type="file" accept="image/png,image/jpeg,image/webp"><button class="btn small ghost" type="button" id="b-heroPhoto-clear">No photo</button></div>
-          <input id="b-heroPhoto" data-s="heroPhoto" type="hidden"></div>
         <div class="field"><label for="b-startLabel">Button wording</label><input id="b-startLabel" data-s="startLabel" maxlength="40" placeholder="Start your rental"></div>
         <div class="field"><label for="b-email">Email</label><input id="b-email" data-s="email" type="email" maxlength="120"></div>
         <div class="field"><label for="b-address">Address</label><textarea id="b-address" data-s="address" rows="2" maxlength="300"></textarea></div>

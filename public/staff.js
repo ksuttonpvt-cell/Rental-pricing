@@ -70,6 +70,7 @@
     if (t.dataset.tab === "requests") loadRequests();
     if (t.dataset.tab === "accounts" && me.admin) loadUsers();
     if (t.dataset.tab === "server") openServerTab();
+    if (t.dataset.tab === "design") openDesign();
   }));
 
   /* Quotes */
@@ -271,22 +272,9 @@
   function renderPriceEditor() { mainEditor.reset(); }
 
   /* Business info */
-  function showHero() {
-    const u = R.photoUrl($("b-heroPhoto").value);
-    $("b-heroPhoto-img").hidden = !u; if (u) $("b-heroPhoto-img").src = u;
-  }
-  $("b-heroPhoto-clear").addEventListener("click", () => { $("b-heroPhoto").value = ""; showHero(); });
-  $("b-heroPhoto-file").addEventListener("change", async e => {
-    const f = e.target.files[0]; if (!f) return;
-    if (!/^image\/(png|jpeg|webp)$/.test(f.type) || f.size > 1_500_000) return say($("biz-out"), "Pick a PNG, JPG or WebP photo under 1.5 MB.");
-    const dataUrl = await new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = bad; r.readAsDataURL(f); });
-    try { const { file } = await api("/api/logos", { method: "POST", body: { dataUrl } }); $("b-heroPhoto").value = file; showHero(); say($("biz-out"), "Photo added. Click Save business info to keep it.", true); }
-    catch (err) { say($("biz-out"), err.message); }
-  });
   function fillBiz() {
     const st = R.settingsOf(site);
     document.querySelectorAll("#biz-form [data-s]").forEach(el => el.value = st[el.dataset.s] ?? "");
-    showHero();
   }
   $("biz-form").addEventListener("submit", async e => {
     e.preventDefault();
@@ -822,6 +810,98 @@
       loadServer(); loadLog(false);
     }, 5000);
   }
+
+  /* Design editor: changes a copy of the site and shows it in a live preview frame. */
+  let dSite = null, dSlug = "", dUploads = [], dTimer = null, dDirty = false;
+  const clone = v => JSON.parse(JSON.stringify(v));
+  function dTarget() {
+    if (!dSlug) {
+      dSite.settings.design = Object.assign({}, R.DEFAULT_DESIGN, dSite.settings.design || {});
+      const st = dSite.settings;
+      return { design: st.design, words: st.design, getPhoto: () => R.settingsOf(dSite).heroPhoto, setPhoto: v => { st.heroPhoto = v; } };
+    }
+    const cat = dSite.partners.find(c => c.slug === dSlug);
+    cat.design = Object.assign({}, R.DEFAULT_DESIGN, cat.design || {});
+    cat.content = R.categoryContent(cat);
+    return { design: cat.design, words: cat.content, getPhoto: () => cat.content.photo, setPhoto: v => { cat.content.photo = v; } };
+  }
+  function pickHtml(selected, kind) {
+    const items = [{ id: "", label: "None" }, ...R.PHOTO_LIBRARY, ...dUploads.map(f => ({ id: f, label: "Uploaded photo" }))];
+    return items.map(p => `<button type="button" class="pick" data-${kind}="${R.esc(p.id)}" aria-pressed="${p.id === (selected || "")}" title="${R.esc(p.label)}">${p.id ? `<img src="${R.esc(R.photoUrl(p.id))}" alt="" loading="lazy">` : `<span>None</span>`}<span class="pick-label">${R.esc(p.label)}</span></button>`).join("");
+  }
+  function drawDesign() {
+    const t = dTarget(), d = t.design;
+    $("d-page-note").textContent = dSlug ? "Locations in this category use this design too." : "Your main visitor page.";
+    $("d-badge").value = t.words.badge || ""; $("d-headline").value = t.words.headline || ""; $("d-sub").value = t.words.sub || "";
+    $("d-badge").placeholder = dSlug ? "" : (R.settingsOf(dSite).tagline || "Car, SUV & truck rentals");
+    $("d-headline").placeholder = dSlug ? "" : "Rental Rates";
+    $("d-sub").placeholder = dSlug ? "" : "See every price and special, then build your own estimate...";
+    $("d-photo").innerHTML = pickHtml(t.getPhoto(), "photo");
+    $("d-bg").innerHTML = pickHtml(d.bg, "bg");
+    $("d-side").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.side === d.photoSide));
+    $("d-fade").value = d.bgFade; $("d-fade-val").textContent = d.bgFade + "%"; $("d-fade").disabled = !d.bg;
+    $("d-accent").innerHTML = R.ACCENTS.map(a => `<button type="button" class="swatch" data-accent="${a.id}" aria-pressed="${(d.accent || "") === a.id}" title="${R.esc(a.label)}" style="--sw:${a.color}"><span></span>${R.esc(a.label)}</button>`).join("")
+      + `<label class="swatch custom" title="Pick any color"><input type="color" id="d-accent-custom" value="${R.esc(d.accent || "#0e6b74")}"> Custom</label>`;
+    $("d-rowphotos").checked = d.rowPhotos !== false;
+    $("d-open").href = "/" + dSlug;
+  }
+  function pushPreview(reloadFrame) {
+    try { localStorage.setItem("designDraft", JSON.stringify(dSite)); }
+    catch { say($("d-msg"), "This browser blocked the preview. Save to see changes."); return; }
+    $("d-msg").className = dDirty ? "note-err" : ""; $("d-msg").textContent = dDirty ? "Unsaved changes" : "";
+    const frame = $("d-frame");
+    if (reloadFrame || !frame.contentWindow || !String(frame.getAttribute("src") || "").includes("preview=1")) { frame.src = `/${dSlug}?preview=1`; return; }
+    // Reload the preview where it was scrolled to.
+    try { sessionStorage.setItem("previewScroll", String(frame.contentWindow.scrollY || 0)); frame.contentWindow.location.reload(); }
+    catch { frame.src = `/${dSlug}?preview=1`; }
+  }
+  const edited = () => { dDirty = true; };
+  const pushSoon = () => { clearTimeout(dTimer); dTimer = setTimeout(() => pushPreview(false), 300); };
+  async function openDesign() {
+    if (!dSite) dSite = clone(site);
+    try { dUploads = (await api("/api/logos")).files || []; } catch { dUploads = []; }
+    $("d-page").innerHTML = `<option value="">Main visitor page</option>` + (dSite.partners || []).map(c => `<option value="${R.esc(c.slug)}">${R.esc(c.label)} page</option>`).join("");
+    $("d-page").value = dSlug;
+    drawDesign(); pushPreview(true);
+  }
+  $("d-page").addEventListener("change", () => { dSlug = $("d-page").value; drawDesign(); pushPreview(true); });
+  ["d-badge", "d-headline", "d-sub"].forEach(id => $(id).addEventListener("input", () => { dTarget().words[id.slice(2)] = $(id).value; edited(); pushSoon(); }));
+  $("d-fade").addEventListener("input", () => { dTarget().design.bgFade = Number($("d-fade").value); $("d-fade-val").textContent = $("d-fade").value + "%"; edited(); pushSoon(); });
+  $("d-rowphotos").addEventListener("change", () => { dTarget().design.rowPhotos = $("d-rowphotos").checked; edited(); pushPreview(false); });
+  document.querySelector('[data-panel="design"]').addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    const t = dTarget();
+    if (b.dataset.photo !== undefined) { t.setPhoto(b.dataset.photo); edited(); drawDesign(); pushPreview(false); }
+    else if (b.dataset.bg !== undefined) { t.design.bg = b.dataset.bg; edited(); drawDesign(); pushPreview(false); }
+    else if (b.dataset.side) { t.design.photoSide = b.dataset.side; edited(); drawDesign(); pushPreview(false); }
+    else if (b.dataset.accent !== undefined) { t.design.accent = b.dataset.accent; edited(); drawDesign(); pushPreview(false); }
+    else if (b.dataset.size) {
+      $("d-size").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+      $("d-frame-wrap").classList.toggle("phone", b.dataset.size === "phone");
+    }
+  });
+  document.querySelector('[data-panel="design"]').addEventListener("input", e => {
+    if (e.target.id === "d-accent-custom") { dTarget().design.accent = e.target.value; edited(); $("d-accent").querySelectorAll(".swatch[data-accent]").forEach(x => x.setAttribute("aria-pressed", "false")); pushSoon(); }
+  });
+  $("d-upload").addEventListener("change", async e => {
+    const f = e.target.files[0]; if (!f) return;
+    if (!/^image\/(png|jpeg|webp)$/.test(f.type) || f.size > 1_500_000) return say($("d-msg"), "Pick a PNG, JPG or WebP photo under 1.5 MB.");
+    const dataUrl = await new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = bad; r.readAsDataURL(f); });
+    try { const { file } = await api("/api/logos", { method: "POST", body: { dataUrl } }); dUploads.unshift(file); drawDesign(); say($("d-msg"), "Photo uploaded. Pick it above.", true); }
+    catch (err) { say($("d-msg"), err.message); }
+    e.target.value = "";
+  });
+  $("d-undo").addEventListener("click", () => { dSite = clone(site); dDirty = false; drawDesign(); pushPreview(false); });
+  $("d-save").addEventListener("click", async () => {
+    $("d-save").disabled = true; $("d-msg").className = ""; $("d-msg").textContent = "Saving…";
+    try {
+      await saveSite(Object.assign({}, site, { settings: dSite.settings, partners: dSite.partners }));
+      dSite = clone(site); dDirty = false; drawDesign(); pushPreview(false);
+      say($("d-msg"), "Saved. Visitors see the new design now.", true);
+      renderPartners(); renderPriceEditor();
+    } catch (err) { say($("d-msg"), err.message); }
+    finally { $("d-save").disabled = false; }
+  });
 
   /* Boot */
   api("/api/me").then(u => { me = u; start(); }).catch(() => showLogin());

@@ -23,6 +23,26 @@
   $("add-opt").addEventListener("click", () => builder.add());
   $("q-combined").addEventListener("change", () => builder.setSite(R.pageView(site, slug)));
 
+  let photoFor = it => R.itemPhoto(it);
+  /* Page look from the design editor: accent color, photo side, background photo, price-row photos. */
+  function applyLook(d) {
+    const root = document.documentElement.style;
+    if (/^#[0-9a-f]{6}$/i.test(d.accent || "")) {
+      const n = parseInt(d.accent.slice(1), 16), lum = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+      root.setProperty("--accent", d.accent);
+      root.setProperty("--accent-ink", lum > 0.6 ? "#111" : "#fff");
+      root.setProperty("--accent-soft", `color-mix(in srgb, ${d.accent} 14%, var(--bg))`);
+    }
+    $("hero").classList.toggle("photo-left", d.photoSide === "left");
+    const bg = R.photoUrl(d.bg);
+    $("page-bg").hidden = !bg;
+    if (bg) {
+      $("page-bg").style.backgroundImage = `url("${bg}")`;
+      $("page-bg-fade").style.opacity = String(Math.min(1, Math.max(0, (Number(d.bgFade) || 0) / 100)));
+    }
+    photoFor = it => d.rowPhotos === false ? "" : R.itemPhoto(it);
+  }
+
   function telHref(p) { return "tel:" + String(p).replace(/[^\d+]/g, ""); }
 
   function render() {
@@ -31,7 +51,8 @@
     const partner = R.partnerOf(site, slug);
     const name = st.businessName || "Rentals";
     const content = R.pageContent(site, slug);
-    const pageTitle = content ? content.headline : "Rental Rates";
+    const design = R.designOf(site, slug);
+    const pageTitle = content ? content.headline : (design.headline || "Rental Rates");
     document.title = st.businessName ? `${pageTitle} – ${st.businessName}` : pageTitle;
     $("hero-title").textContent = pageTitle;
     if (st.visitorSiteOn === false) {
@@ -48,6 +69,10 @@
       </section>`;
       return;
     }
+    applyLook(design);
+    if (!content) {
+      if (design.sub) $("hero-lede").textContent = design.sub;
+    }
     if (!content && R.photoUrl(st.heroPhoto)) {
       $("hero-photo").src = R.photoUrl(st.heroPhoto); $("hero-photo").alt = "A rental 4Runner at the dealership"; $("hero-photo").hidden = false; $("hero").classList.add("hero-split");
     }
@@ -62,6 +87,7 @@
     $("brand").textContent = name;
     $("foot-name").textContent = `© ${new Date().getFullYear()} ${name}`;
     if (content && content.badge) $("tagline").textContent = content.badge;
+    else if (!content && design.badge) $("tagline").textContent = design.badge;
     else if (st.tagline) $("tagline").textContent = st.tagline;
     $("top-hours").textContent = R.hoursLines(st.hours)[0] || "";
     if (st.phone) { $("top-phone").hidden = false; $("top-phone").textContent = st.phone; $("top-phone").href = telHref(st.phone); }
@@ -83,7 +109,7 @@
         body = `<div class="card-grid">${items.map(it => {
           const r = R.rates(it, st);
           return `<article class="special">
-            ${R.itemPhoto(it) ? `<img class="card-photo" src="${R.esc(R.itemPhoto(it))}" alt="${R.esc(it.name)}" loading="lazy">` : ""}
+            ${photoFor(it) ? `<img class="card-photo" src="${R.esc(photoFor(it))}" alt="${R.esc(it.name)}" loading="lazy">` : ""}
             <span class="tag">${R.esc(it.tag || "Special")}</span>
             <h3>${R.esc(it.name)}</h3>
             ${it.detail ? `<p>${R.esc(it.detail)}</p>` : ""}
@@ -98,7 +124,7 @@
           ${items.map(it => {
             const r = R.rates(it, st);
             return `<li class="row">
-              <div class="name">${R.itemPhoto(it) ? `<img class="row-photo" src="${R.esc(R.itemPhoto(it))}" alt="${R.esc(it.name)}" loading="lazy">` : ""}<div><h3>${R.esc(it.name)}</h3>${it.detail ? `<p class="detail">${R.esc(it.detail)}</p>` : ""}</div></div>
+              <div class="name">${photoFor(it) ? `<img class="row-photo" src="${R.esc(photoFor(it))}" alt="${R.esc(it.name)}" loading="lazy">` : ""}<div><h3>${R.esc(it.name)}</h3>${it.detail ? `<p class="detail">${R.esc(it.detail)}</p>` : ""}</div></div>
               <div class="cell"><span class="lbl">Daily</span><span class="amt money">${R.fmt(r.daily)}</span></div>
               <div class="cell week"><span class="lbl">7 days</span>${r.week === null ? `<span class="unit">Daily only</span>` : `<span class="amt money">${R.fmt(r.week)}</span><span class="save money">Save ${R.fmt(r.daily * 7 - r.week)}</span>`}</div>
               <button class="btn small" data-quote="${R.esc(it.id)}">Price this</button>
@@ -179,6 +205,19 @@
     } finally { $("r-send").disabled = false; }
   });
 
+  // Design editor preview: the staff page puts its unsaved design in this browser's storage,
+  // and this page (opened in the editor with ?preview=1) shows it and reloads when it changes.
+  const PREVIEW = new URLSearchParams(location.search).get("preview") === "1";
+  if (PREVIEW) {
+    let draft = null;
+    try { draft = JSON.parse(localStorage.getItem("designDraft") || "null"); } catch {}
+    if (draft) {
+      try { const y = Number(sessionStorage.getItem("previewScroll")); sessionStorage.removeItem("previewScroll"); if (y) addEventListener("load", () => scrollTo(0, y)); } catch {}
+      $("req-form").addEventListener("submit", e => { e.stopImmediatePropagation(); e.preventDefault(); $("r-msg-out").textContent = "Preview only: requests aren't sent from the design editor."; }, true);
+      site = draft; render();
+      return;
+    }
+  }
   fetch("/api/site").then(r => r.json()).then(s => { site = s; render(); })
     .catch(() => { $("sections").innerHTML = `<div class="empty">Prices couldn't load. Please refresh the page.</div>`; });
 })();
