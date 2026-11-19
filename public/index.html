@@ -107,33 +107,28 @@
     </div>
   </section>
 
-  <section aria-labelledby="info-h" style="margin-bottom:32px">
-    <div class="section-head"><h2 id="info-h">Good to know</h2></div>
-    <div class="info-grid">
-      <div class="info-card wide" id="terms-card" hidden>
-        <h3>Before you rent</h3>
-        <ul class="terms" id="terms-list"></ul>
-      </div>
-      <div class="info-card">
-        <h3>How pricing works</h3>
-        <p id="how"></p>
-        <p id="terms" class="muted"></p>
-      </div>
-      <div class="info-card" id="fuel-card">
-        <h3>Fuel</h3>
-        <div class="fuel-price money" id="fuel-price"></div>
-        <p class="muted">per gallon if the vehicle comes back without a full tank. Return it full and there's no fuel charge.</p>
-      </div>
-      <div class="info-card" id="visit-card">
-        <h3>Visit or call</h3>
-        <p id="v-address"></p>
-        <p id="v-hours" class="muted"></p>
+  <section class="needs-sec" id="needs-sec" aria-labelledby="needs-h" hidden>
+    <div class="section-head"><h2 id="needs-h">What you need</h2><p>Bring these when you pick up.</p></div>
+    <div class="needs" id="needs"></div>
+  </section>
+
+  <section class="faq-sec" aria-labelledby="faq-h">
+    <div class="section-head"><h2 id="faq-h">Questions</h2></div>
+    <div class="faq" id="faq"></div>
+    <p class="muted fine-print" id="terms"></p>
+  </section>
+
+  <section class="visit-sec" id="visit-card" aria-labelledby="visit-h">
+    <div class="section-head"><h2 id="visit-h">Visit or call</h2></div>
+    <div class="visit">
+      <div class="visit-card"><h3>Visit</h3><p id="v-address"></p><p><a id="v-map" target="_blank" rel="noopener" hidden>Get directions</a></p></div>
+      <div class="visit-card"><h3>Hours</h3><p id="v-hours"></p></div>
+      <div class="visit-card"><h3>Call</h3>
         <p><a id="v-phone" hidden></a></p>
         <p id="v-direct-wrap" hidden>Direct line: <a id="v-direct"></a></p>
         <p id="v-roadside" class="muted" hidden></p>
-        <p id="v-shuttle-wrap" hidden><a id="v-shuttle" target="_blank" rel="noopener">Need a ride? Request a free shuttle</a></p>
         <p><a id="v-email" hidden></a></p>
-        <p><a id="v-map" target="_blank" rel="noopener" hidden>Get directions</a></p>
+        <p id="v-shuttle-wrap" hidden><a id="v-shuttle" target="_blank" rel="noopener">Need a ride? Request a free shuttle</a></p>
       </div>
     </div>
   </section>

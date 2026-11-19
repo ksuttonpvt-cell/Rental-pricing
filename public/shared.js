@@ -20,6 +20,16 @@
     "You're responsible for the vehicle until we check it in. We're not responsible for items left inside."
   ].join("\n");
 
+  const DEFAULT_NEEDS = [
+    "Driver's license | Valid and in the renter's name. Drivers 21 and older.",
+    "Credit card | In the renter's name, for the rental and any extra charges.",
+    "Your auto insurance | Proof of your own auto insurance policy.",
+    "Stay in Colorado | Rentals are under 30 days and stay in Colorado."
+  ].join("\n");
+  // "Title | text" lines -> [{ title, text }]
+  const needCards = st => String(st.needs || "").split("\n").map(l => l.trim()).filter(Boolean)
+    .map(l => { const i = l.indexOf("|"); return i < 0 ? { title: l, text: "" } : { title: l.slice(0, i).trim(), text: l.slice(i + 1).trim() }; });
+
   function settingsOf(site) {
     return Object.assign({
       businessName: "", tagline: "", phone: "", email: "", address: "", hours: "", mapUrl: "",
@@ -32,6 +42,7 @@
       // Taxes and fees, worked out like page 1 of the rental agreement.
       dailyRentalFee: 5.57, taxRate: 9.195, servicesFeeRate: 3.95,
       rentalTerms: DEFAULT_TERMS,
+      needs: DEFAULT_NEEDS,
       heroPhoto: "/img/hero-4runner.jpg"
     }, (site && site.settings) || {});
   }
@@ -318,7 +329,7 @@
     return L.join("\n");
   }
 
-  const api = { round2, fmt, plural, lenName, esc, settingsOf, rates, priceFor, allItems, findItem, partnerOf, sourceLabel, pageContent, categoryContent, photoUrl, itemPhoto, PHOTO_LIBRARY, DEFAULT_DESIGN, ACCENTS, designOf, PAGE_CONTENT, pageSections, allSections, pageView, staffView,parseDate, isoDate, niceDate, daysBetween, cleanDays, COMPARE, optionLabel, howItWorks, buildEmail, hoursLines, termLines, totalNote, hasFees, feesFor, MAX_DAYS };
+  const api = { round2, fmt, plural, lenName, esc, settingsOf, rates, priceFor, allItems, findItem, partnerOf, sourceLabel, pageContent, categoryContent, photoUrl, itemPhoto, PHOTO_LIBRARY, DEFAULT_DESIGN, ACCENTS, designOf, PAGE_CONTENT, pageSections, allSections, pageView, staffView,parseDate, isoDate, niceDate, daysBetween, cleanDays, COMPARE, optionLabel, howItWorks, buildEmail, hoursLines, needCards, termLines, totalNote, hasFees, feesFor, MAX_DAYS };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Rates = api;
 })(typeof window !== "undefined" ? window : globalThis);

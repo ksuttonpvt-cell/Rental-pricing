@@ -338,7 +338,7 @@ function cleanSite(input, version) {
     startUrl: /^https:\/\//.test(str(s.startUrl, 500)) ? str(s.startUrl, 500) : "", startLabel: str(s.startLabel, 40),
     shuttleUrl: /^https:\/\//.test(str(s.shuttleUrl, 500)) ? str(s.shuttleUrl, 500) : "", shuttleMiles: num(s.shuttleMiles, 0, 500),
     dailyRentalFee: num(s.dailyRentalFee, 0, 1000), taxRate: rate(s.taxRate), servicesFeeRate: rate(s.servicesFeeRate),
-    rentalTerms: str(s.rentalTerms, 3000), heroPhoto: photoOf(s.heroPhoto),
+    rentalTerms: str(s.rentalTerms, 3000), needs: str(s.needs, 1500), heroPhoto: photoOf(s.heroPhoto),
     ...(s.design ? { design: cleanDesign(s.design) } : {}),
     visitorSiteOn: s.visitorSiteOn !== false, requestsOn: s.requestsOn !== false, shuttleOn: s.shuttleOn !== false,
     offlineMessage: str(s.offlineMessage, 300),

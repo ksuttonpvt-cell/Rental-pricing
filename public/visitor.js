@@ -69,6 +69,24 @@
     $("who").hidden = false;
   }
 
+  /* "What you need" cards and the questions list (both from Business info). */
+  function renderNeedsAndFaq(st) {
+    const needs = R.needCards(st);
+    $("needs").innerHTML = needs.map(n => `<div class="need"><b>${R.esc(n.title)}</b>${n.text ? `<span>${R.esc(n.text)}</span>` : ""}</div>`).join("");
+    $("needs-sec").hidden = !needs.length;
+    const qa = [];
+    if (R.hasFees(st)) qa.push(["What's included in the price?", `Every estimate includes the Colorado daily rental fee (${R.fmt(Number(st.dailyRentalFee) || 0)} a day), ${Number(st.taxRate) || 0}% tax and the ${Number(st.servicesFeeRate) || 0}% connected services fee. Fuel, tolls, tickets and cleaning are extra only if they apply.`]);
+    const disc = Number(st.weeklyDiscount) || 0;
+    qa.push(["How do weekly and longer rentals work?", `A 7-day rental gets the weekly rate${disc ? ` (${disc}% off seven daily charges unless a special weekly price is listed)` : ""}. Longer rentals pay the weekly rate for each full week and the daily rate for extra days, never more than one more week. Rentals are shorter than 30 days.`]);
+    const fuel = Number(st.fuelPerGallon);
+    if (fuel) qa.push(["Is there a fuel charge?", `Only if the vehicle comes back with less fuel than it left with. We refill it at ${R.fmt(fuel)} per gallon.`]);
+    if (st.shuttleOn !== false && /^https:\/\//.test(st.shuttleUrl || "")) qa.push(["Can you pick me up?", `Yes. Our free shuttle can bring you to pick up your rental${Number(st.shuttleMiles) ? ` if you're within ${Number(st.shuttleMiles)} miles` : ""}.`, { href: st.shuttleUrl, label: "Request a free shuttle" }]);
+    if (st.roadsidePhone) qa.push(["What if I break down?", `Call 24-hour roadside assistance at ${st.roadsidePhone}.`]);
+    const rules = R.termLines(st);
+    if (rules.length) qa.push(["All rental rules", rules]);
+    $("faq").innerHTML = qa.map(([q, a, link]) => `<details><summary>${R.esc(q)}</summary>${Array.isArray(a) ? `<ul>${a.map(x => `<li>${R.esc(x)}</li>`).join("")}</ul>` : `<p>${R.esc(a)}</p>`}${link ? `<p><a href="${R.esc(link.href)}" target="_blank" rel="noopener">${R.esc(link.label)}</a></p>` : ""}</details>`).join("");
+  }
+
   function telHref(p) { return "tel:" + String(p).replace(/[^\d+]/g, ""); }
 
   function render() {
@@ -179,7 +197,6 @@
       $("hero").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
     }));
 
-    $("how").textContent = R.howItWorks(st, []).filter(l => !l.startsWith("Fuel")).join(" ");
     $("terms").textContent = st.terms || "";
     if (/^https:\/\//.test(st.startUrl || "")) {
       for (const id of ["start-link", "top-start"]) { $(id).href = st.startUrl; $(id).textContent = st.startLabel || "Start your rental"; $(id).hidden = false; }
@@ -192,16 +209,9 @@
       $("v-shuttle").href = st.shuttleUrl; $("v-shuttle-wrap").hidden = false;
       if (miles) $("v-shuttle").textContent = `Need a ride? Request a free shuttle (within ${miles} miles)`;
     }
-    const terms = R.termLines(st);
-    $("terms-card").hidden = !terms.length;
-    $("terms-list").innerHTML = terms.map(t => `<li>${R.esc(t)}</li>`).join("");
+    renderNeedsAndFaq(st);
     if (st.directPhone) { $("v-direct-wrap").hidden = false; $("v-direct").textContent = st.directPhone; $("v-direct").href = telHref(st.directPhone); }
     if (st.roadsidePhone) { $("v-roadside").hidden = false; $("v-roadside").textContent = `24-hour roadside assistance: ${st.roadsidePhone}`; }
-    const feeText = R.hasFees(st) ? ` Estimates include the Colorado daily rental fee (${R.fmt(Number(st.dailyRentalFee) || 0)}/day), ${Number(st.taxRate) || 0}% tax and a ${Number(st.servicesFeeRate) || 0}% connected services fee.` : "";
-    $("how").textContent += feeText;
-    const fuel = Number(st.fuelPerGallon);
-    $("fuel-card").hidden = !fuel;
-    $("fuel-price").textContent = fuel ? R.fmt(fuel) : "";
     $("v-address").textContent = st.address || "";
     $("v-hours").textContent = R.hoursLines(st.hours).join("\n");
     if (st.phone) { $("v-phone").hidden = false; $("v-phone").textContent = st.phone; $("v-phone").href = telHref(st.phone); }

@@ -394,3 +394,20 @@ table.plain th, table.plain td { text-align: left; padding: 8px; border-bottom: 
 .vcard > .btn { margin: 0 16px 16px; }
 .vcard.no-photo { border-top: 4px solid var(--accent); }
 @media (max-width: 480px) { .fleet { grid-template-columns: 1fr; } }
+
+/* What you need, Questions, Visit or call */
+.needs-sec, .faq-sec, .visit-sec { margin-block: 36px; }
+.needs { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.need { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 4px; }
+.need b { font-family: var(--font-display); font-size: 17px; }
+.need span { font-size: 14px; color: var(--muted); }
+.faq { display: grid; gap: 8px; }
+.faq details { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; }
+.faq summary { font-weight: 700; cursor: pointer; }
+.faq details p, .faq details ul { margin: 10px 0 0; color: var(--muted); }
+.faq details ul { padding-left: 20px; display: grid; gap: 4px; }
+.fine-print { font-size: 13px; margin: 12px 0 0; }
+.visit { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.visit-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+.visit-card h3 { font-size: 17px; margin-bottom: 6px; }
+.visit-card p { margin: 0 0 4px; white-space: pre-line; }
