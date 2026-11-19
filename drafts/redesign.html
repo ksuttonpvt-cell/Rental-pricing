@@ -150,6 +150,20 @@ footer { padding-block: 30px 90px; color: var(--muted); font-size: 13px; }
 .hint { font-weight: 400; color: var(--muted); font-size: 12px; }
 @media (max-width: 860px) { .refer { grid-template-columns: 1fr; } .refer-form .three { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 480px) { .refer-form .three, .refer-form .two { grid-template-columns: 1fr; } }
+
+.contact-card { background: var(--bg); border: 1px dashed var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 6px; justify-items: start; }
+.contact-card p { margin: 0; font-size: 14px; }
+.alerts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 20px; align-items: start; }
+.alerts-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; display: grid; gap: 10px; }
+.alerts-card h3 { font-size: 20px; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 14px; font-weight: 500; }
+.check input { width: auto; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.email-preview { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.em-head { padding: 12px 16px; border-bottom: 1px solid var(--line); display: grid; gap: 2px; }
+.em-head span { font-size: 13px; color: var(--muted); }
+.email-preview pre { margin: 0; padding: 14px 16px; font: 13px/1.5 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 860px) { .alerts { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -248,12 +262,18 @@ footer { padding-block: 30px 90px; color: var(--muted); font-size: 13px; }
   <div class="refer">
     <div class="refer-intro">
       <div class="partner"><span class="logo" aria-hidden="true">ABC</span><div><b>ABC Collision</b><br><span style="color:var(--muted);font-size:14px">Body shop partner · $34.99/day</span></div></div>
-      <p style="margin:0">Send us a customer in about 20 seconds. We call them, confirm a vehicle and get them moving.</p>
+      <p style="margin:0">Send us a customer in about 20 seconds. We reach out to them, confirm a vehicle and get them moving.</p>
       <ol>
         <li>Fill in the customer's name and phone.</li>
-        <li>We reach them the same business day and book the rental at your partner rate.</li>
-        <li>You get a text when they pick up, and a monthly count of customers you sent.</li>
+        <li>We contact them and book the rental at your partner rate.</li>
+        <li>Rather call us themselves? Give them our contact info below.</li>
       </ol>
+      <div class="contact-card">
+        <b>Our contact info for your customer</b>
+        <p>Rentals: (720) 907-0926<br>Direct line: (303) 996-1680<br>2465 48th Ct, Boulder · M–F 7–6, Sat 8–5</p>
+        <button class="btn small" type="button" id="rf-copy">Copy to text your customer</button>
+        <span class="hint" id="rf-copied" role="status"></span>
+      </div>
     </div>
     <form class="refer-form" id="refer-form" novalidate>
       <h3>Send a customer</h3>
@@ -271,17 +291,44 @@ footer { padding-block: 30px 90px; color: var(--muted); font-size: 13px; }
         <div class="field"><label for="rf-date">Needs it</label><input id="rf-date" type="date"></div>
         <div class="field"><label for="rf-days">About how many days?</label><input id="rf-days" type="number" min="1" max="29" value="5"></div>
       </div>
-      <div class="two">
-        <div class="field"><label for="rf-claim">Insurance claim number <span class="hint">(optional)</span></label><input id="rf-claim" placeholder="If their insurance is covering it"></div>
-        <div class="field"><span class="label" style="font-size:13px;font-weight:600">Who calls who?</span>
-          <div class="seg" role="radiogroup" aria-label="Who calls who"><label><input type="radio" name="rf-who" checked> We call them</label><label><input type="radio" name="rf-who"> They'll call us</label></div></div>
-      </div>
+      <div class="field"><label for="rf-claim">Insurance claim number <span class="hint">(optional)</span></label><input id="rf-claim" placeholder="If their insurance is covering it"></div>
       <div class="field"><label for="rf-notes">Notes <span class="hint">(optional)</span></label><textarea id="rf-notes" rows="2" placeholder="e.g. Needs a car seat-friendly SUV, ready after 2 pm"></textarea></div>
       <button class="btn primary" type="submit">Send referral</button>
+      <p class="hint" style="margin:0;font-size:13px">We'll reach out to your customer. If they'd rather call us first, that's fine too.</p>
       <div class="refer-done" id="rf-done" role="status" hidden></div>
     </form>
   </div>
-  <div class="note"><b>Change 7, "Refer a customer".</b> Today a shop has to hand the customer a link or QR code and hope they follow up. With this form the shop sends you the customer directly. Each referral would land in the staff <b>Requests</b> tab tagged "ABC Collision (Body shop)", and you'd call the customer. The shop's name is filled in from its link, so there's no login for partners. Big rental companies run shop referral programs like this (Hertz with points per rental, Enterprise with certified shops). In this draft, Send only shows a sample confirmation. Nothing is sent.</div>
+  <div class="note"><b>Change 7, "Refer a customer".</b> Today a shop has to hand the customer a link or QR code and hope they follow up. With this form the shop sends you the customer directly. Each referral would land in the staff <b>Requests</b> tab tagged "ABC Collision (Body shop)", you'd get an email right away (below), and you'd reach out to the customer. The shop also gets your contact info to pass along if the customer would rather call you. The shop's name is filled in from its link, so there's no login for partners. Big rental companies run shop referral programs like this (Hertz with points per rental, Enterprise with certified shops). In this draft, Send only shows a sample confirmation. Nothing is sent.</div>
+</div></section>
+
+<section id="alerts" style="padding-top:0"><div class="wrap">
+  <div class="sec-head"><h2>Staff side: email alerts</h2><p>A new card in Business info (staff only).</p></div>
+  <div class="alerts">
+    <div class="alerts-card">
+      <h3>Email me when something comes in</h3>
+      <div class="field"><label for="al-to">Send alerts to</label><input id="al-to" type="email" value="ksutton@corwinauto.com"></div>
+      <label class="check"><input type="checkbox" checked> New partner referrals</label>
+      <label class="check"><input type="checkbox" checked> New quote requests from the website</label>
+      <div class="actions"><button class="btn small" type="button" id="al-test">Send a test email</button><span class="hint" id="al-out" role="status"></span></div>
+      <p class="hint" style="margin:0">Sent from the dealership's email account, set up the same way as the shuttle app (Microsoft 365, Gmail or any SMTP email).</p>
+    </div>
+    <div class="email-preview" aria-label="Example alert email">
+      <div class="em-head"><b>New referral: Jordan Lee (from ABC Collision)</b><span>To: ksutton@corwinauto.com</span></div>
+      <pre>ABC Collision (Body shop) sent a customer.
+
+Customer:  Jordan Lee
+Phone:     (303) 555-0100
+Needs:     Any vehicle, from Nov 19, about 5 days
+Rate:      Body shop partner rate, $34.99/day
+Claim #:   (none)
+Sent by:   Sam at the front desk
+Notes:     Ready after 2 pm
+
+Open in Requests:
+https://rentalsaroundtown.com/staff</pre>
+    </div>
+  </div>
+  <div class="note"><b>Change 8, email alerts.</b> Every referral and quote request gets pushed to your inbox, so you don't have to keep checking the Requests tab. It uses your own email account, like the shuttle app, so it costs nothing extra. Text alerts are possible later through Twilio (about 1¢ per text).</div>
 </div></section>
 
 <section id="visit" style="padding-top:0"><div class="wrap">
@@ -350,8 +397,14 @@ footer { padding-block: 30px 90px; color: var(--muted); font-size: 13px; }
     const done = document.getElementById("rf-done"); done.hidden = false;
     if (!name || !phone) { done.style.background = "var(--accent-soft)"; done.style.color = "var(--accent)"; done.textContent = "Add the customer's name and phone so we can reach them."; return; }
     done.style.background = ""; done.style.color = "";
-    done.textContent = `Draft preview: ${name} would be sent to Corwin Toyota Boulder as a referral from ABC Collision. We'd call ${phone} today. Nothing was actually sent.`;
+    done.textContent = `Draft preview: thanks, ABC Collision. Corwin Toyota Boulder will reach out to ${name} at ${phone}. Nothing was actually sent.`;
   });
+  document.getElementById("rf-copy").addEventListener("click", async () => {
+    const text = "Corwin Toyota Boulder rentals: (720) 907-0926 (direct line (303) 996-1680), 2465 48th Ct, Boulder. M-F 7-6, Sat 8-5.";
+    const out = document.getElementById("rf-copied");
+    try { await navigator.clipboard.writeText(text); out.textContent = "Copied"; } catch { out.textContent = text; }
+  });
+  document.getElementById("al-test").addEventListener("click", () => { document.getElementById("al-out").textContent = "Draft preview: a test email would be sent now."; });
   const tog = document.getElementById("toggle-notes");
   tog.addEventListener("click", () => { const h = document.body.classList.toggle("hide-notes"); tog.textContent = h ? "Show notes" : "Hide notes"; });
 })();
