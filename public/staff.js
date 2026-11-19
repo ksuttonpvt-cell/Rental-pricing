@@ -858,7 +858,17 @@
   const edited = () => { dDirty = true; };
   const pushSoon = () => { clearTimeout(dTimer); dTimer = setTimeout(() => pushPreview(false), 300); };
   async function openDesign() {
-    if (!dSite) dSite = clone(site);
+    if (!dSite) {
+      dSite = clone(site);
+      // Bring back a design that wasn't saved (for example if the login ran out), if the site hasn't changed since.
+      try {
+        const saved = JSON.parse(localStorage.getItem("designDraft") || "null");
+        if (saved && saved.version === site.version && JSON.stringify(saved.settings.design || null) + JSON.stringify((saved.partners || []).map(p => [p.design, p.content])) !== JSON.stringify(site.settings.design || null) + JSON.stringify((site.partners || []).map(p => [p.design, p.content]))) {
+          dSite = saved; dDirty = true;
+          setTimeout(() => say($("d-msg"), "Your unsaved design was brought back. Click Save design to keep it."), 50);
+        }
+      } catch {}
+    }
     try { dUploads = (await api("/api/logos")).files || []; } catch { dUploads = []; }
     $("d-page").innerHTML = `<option value="">Main visitor page</option>` + (dSite.partners || []).map(c => `<option value="${R.esc(c.slug)}">${R.esc(c.label)} page</option>`).join("");
     $("d-page").value = dSlug;

@@ -175,7 +175,7 @@
   ];
   /* How a page looks. The main page keeps it in settings.design, a category in category.design;
      locations use their category's. The top photo is settings.heroPhoto / category.content.photo. */
-  const DEFAULT_DESIGN = { photoSide: "right", bg: "", bgFade: 86, accent: "", rowPhotos: true, badge: "", headline: "", sub: "" };
+  const DEFAULT_DESIGN = { photoSide: "right", bg: "", bgFade: 86, accent: "", rowPhotos: false, badge: "", headline: "", sub: "" };
   const ACCENTS = [
     { id: "", label: "Teal (standard)", color: "#0e6b74" },
     { id: "#c8102e", label: "Toyota red", color: "#c8102e" },

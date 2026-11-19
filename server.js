@@ -31,6 +31,7 @@ const FILES = {
   site: path.join(DATA_DIR, "site.json"),
   users: path.join(DATA_DIR, "users.json"),
   requests: path.join(DATA_DIR, "requests.json"),
+  sessions: path.join(DATA_DIR, "sessions.json"),
 };
 
 /* ---------- storage ---------- */
@@ -148,10 +149,19 @@ if (process.argv[2] === "add-user") {
 }
 
 /* ---------- sessions & rate limits ---------- */
-const sessions = new Map(); // token -> { username, expires }
+// Staff logins. Saved to data/sessions.json so a restart or update doesn't log everyone out.
+// Only a hash of each login cookie is stored, so the file can't be used to sign in.
+const tokenHash = t => crypto.createHash("sha256").update(String(t)).digest("hex");
+const sessions = new Map(readJson(FILES.sessions, []).filter(e => Array.isArray(e) && e[1] && e[1].expires > Date.now())); // hash -> { username, expires }
+let sessionsTimer = null;
+function saveSessions() {
+  clearTimeout(sessionsTimer);
+  sessionsTimer = setTimeout(() => writeJson(FILES.sessions, [...sessions]).catch(() => {}), 200);
+}
 function newSession(username) {
   const token = crypto.randomBytes(32).toString("base64url");
-  sessions.set(token, { username, expires: Date.now() + SESSION_HOURS * 3600e3 });
+  sessions.set(tokenHash(token), { username, expires: Date.now() + SESSION_HOURS * 3600e3 });
+  saveSessions();
   return token;
 }
 function getCookie(req, name) {
@@ -160,10 +170,10 @@ function getCookie(req, name) {
 }
 function currentUser(req) {
   const t = getCookie(req, "sid");
-  const s = t && sessions.get(t);
+  const s = t && sessions.get(tokenHash(t));
   if (!s) return null;
-  if (s.expires < Date.now()) { sessions.delete(t); return null; }
-  if (!users.some(u => u.username === s.username)) { sessions.delete(t); return null; }
+  if (s.expires < Date.now()) { sessions.delete(tokenHash(t)); saveSessions(); return null; }
+  if (!users.some(u => u.username === s.username)) { sessions.delete(tokenHash(t)); saveSessions(); return null; }
   return s.username;
 }
 // Older logins (made before staff roles existed) count as admins.
@@ -201,7 +211,7 @@ function limited(key, max, windowMs) {
 }
 setInterval(() => {
   const now = Date.now();
-  for (const [k, s] of sessions) if (s.expires < now) sessions.delete(k);
+  for (const [k, s] of sessions) if (s.expires < now) { sessions.delete(k); saveSessions(); }
   for (const [k, b] of buckets) if (!b.some(t => now - t < 3600e3)) buckets.delete(k);
 }, 600e3).unref();
 
@@ -378,7 +388,7 @@ async function handle(req, res) {
       return json(res, 200, { username: u.username, admin: isAdmin(u.username) }, { "Set-Cookie": sessionCookie(req, token, SESSION_HOURS * 3600) });
     }
     if (p === "/api/logout" && m === "POST") {
-      const t = getCookie(req, "sid"); if (t) sessions.delete(t);
+      const t = getCookie(req, "sid"); if (t) { sessions.delete(tokenHash(t)); saveSessions(); }
       return json(res, 200, { ok: true }, { "Set-Cookie": sessionCookie(req, "", 0) });
     }
     if (p === "/api/me" && m === "GET") {
@@ -465,6 +475,7 @@ async function handle(req, res) {
       users = users.filter(u => u.username !== um[1]);
       await writeJson(FILES.users, users);
       for (const [k, s] of sessions) if (s.username === um[1]) sessions.delete(k);
+      saveSessions();
       return json(res, 200, { ok: true });
     }
     if (p === "/api/password" && m === "POST") {
